@@ -60,3 +60,35 @@ class Player:
     def set_position(self, position):
         self.position = position
     
+print("\n ===== Welcome to Calvin's Poker Simulator! =====")
+deck = Deck()
+deck.shuffle()
+player_count = int(input('\nEnter number of players: '))
+while player_count != 3:
+    print('This poker sim is currently limited to 3 players')
+    print('Please enter 3')
+    print("I know it's silly to ask. This will be updated eventually, I promise :)")
+    player_count = int(input('Enter number of players: '))
+starting_stack = int(input('Enter starting chip stack: '))
+while starting_stack < 100 or starting_stack > 300:    
+    print('Starting stack must be between 100 and 300 chips')
+    starting_stack = int(input('Enter starting chip stack: '))
+bb = int(input('Enter Big Blind: '))
+while bb < 1 or bb > 10:
+    print('Big Blind must be between 1 and 10 chips')
+    bb = int(input('Enter Big Blind: '))
+sb = bb /2
+
+p1 = Player(input('Player 1 name: '), starting_stack, 0)
+p2 = Player(input('Player 2 name: '), starting_stack, 1)
+p3 = Player(input('Player 3 name: '), starting_stack, 2)
+
+print('\n===== Set-up complete! =====\n')
+
+def game_details():
+    print('\n===  GAME DETAILS ===')
+    print(str(player_count) + 'Players\n')
+    p1.get_info()
+    p2.get_info()
+    p3.get_info()
+
