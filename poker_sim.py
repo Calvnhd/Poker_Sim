@@ -22,7 +22,8 @@ class Deck:
         return len(self.discard)
     def shuffle(self):
         shuffled = []
-        self.deck.extend(self.discard)
+        if len(self.discard) > 0:
+            self.deck.extend(self.discard)
         for card in range(len(self.deck)):
             shuffled.append(self.deck.pop(random.randint(0, len(self.deck)-1)))
         self.deck = shuffled[:]
@@ -38,9 +39,24 @@ class Deck:
     def list_discard(self):
         print(self.discard)
     
-deck = Deck()
-print(deck.get_size())
-deck.list_deck()
-deck.shuffle()
-deck.list_deck()
-print(deck.get_size())
+class Player:
+    def __init__(self, name, chips, position):
+        self.name = name
+        self.chips = chips
+        self.hand = []
+        self.position = position
+    def get_chips(self):
+        return self.chips
+    def bet(self, amount):
+        self.chips -= amount
+        return amount
+    def add_chips(self, amount):
+        self.chips += amount
+    def get_info(self):
+        print('Name:     ' + str(self.name))
+        print('Chips:    ' + str(self.chips))
+        print('Hand      ' + str(self.hand))
+        print('Position: ' + str(self.position))
+    def set_position(self, position):
+        self.position = position
+    
