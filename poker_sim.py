@@ -1,21 +1,24 @@
 import random
 
+# starting by ignoring suits and altering face cards to int
 class Deck:
     def __init__(self):
         self.deck = []
         self.discard = []
         self.in_play = []
-        for card in range(2,12):
-            if card < 11:
-                self.deck.append(str(card) + 'c')
-                self.deck.append(str(card) + 's')
-                self.deck.append(str(card) + 'h')
-                self.deck.append(str(card) + 'd')
-            else:
-                self.deck.extend(['Jc','Js','Jh','Jd'])
-                self.deck.extend(['Qc','Qs','Qh','Qd'])
-                self.deck.extend(['Kc','Ks','Kh','Kd'])
-                self.deck.extend(['Ac','As','Ah','Ad'])
+        suit = 'H'
+        for card in range(2,15):
+            self.deck.extend([[card, suit]])
+        suit = 'D'
+        for card in range(2,15):
+            self.deck.extend([[card, suit]])
+        suit = 'C'
+        for card in range(2,15):
+            self.deck.extend([[card, suit]])
+        suit = 'S'
+        for card in range(2,15):
+            self.deck.extend([[card, suit]])
+        print(self.deck)
     def get_size(self):
         return len(self.deck)
     def get_discard_size(self):
@@ -165,3 +168,7 @@ deck.info()
 deck.list_deck()
 deck.list_discard()
 deck.list_in_play()
+
+# notes
+# you can take out the in play list, and just use deck or dealt.  It'll be simpler, there's no need to track in play seperately
+# use a dictionary for player names and positions?
