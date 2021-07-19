@@ -65,19 +65,47 @@ def evaluate_hand(hand):
     pair_two = False
     flush = False
     straight = False
-# check for quads, trips, pairs
-# find highest card
-# check for flush
-    print('Checking for flush in ' + str(hand))
+
+    ranks = set()    
     suits = set()
     for i in range(len(hand)):
+        ranks.add(hand[i][0])
         suits.add(hand[i][1])
+    ranks_sorted = sorted(ranks)
+
+    print(hand)
+
+# check for flush
     if len(suits) == 1:
         flush = True
-
 # check for straight
+    if len(ranks) == 5:
+        # this seems too brute?
+        if ranks_sorted[4] == 14 and ranks_sorted[3] == 5: # Ace is low
+            ranks_sorted[4] == 1
+            ranks_sorted = sorted(ranks_sorted)
+        if ((ranks_sorted[0] + 1) == ranks_sorted[1]) and ((ranks_sorted[1] + 1) == ranks_sorted[2]) and ((ranks_sorted[2] + 1) == ranks_sorted[3]) and ((ranks_sorted[3] + 1) == ranks_sorted[4]):
+            straight = True
+    elif len(ranks) == 4: # check for quads, trips, pairs
+        pair_one = True
+    elif len(ranks) == 3:
+        pass
+    else:
+        pass
+#1 2 3 4 5 -- set of 5 -- high card DONE
+#1 1 2 3 4 -- set of 4 -- one pair
+#1 1 2 2 3 -- set of 3 -- two pair
+#1 1 1 2 3 -- set of 3 -- 3 of a kind
+#1 1 1 2 2 -- set of 2 -- full house
+#1 1 1 1 2 -- set of 2 -- quads
+
+# find highest card
+
 # check for kickers
 # calculate value
+    if flush and straight and (ranks_sorted[4] == 14):
+        print('Royal Flush')
+        return 9
     if flush and straight:
         print('Straight Flush')
         return 8
@@ -103,7 +131,7 @@ def evaluate_hand(hand):
         print('Pair')
         return 1
     else:
-        print('High Card')
+        #print('High Card')
         return 0
 
 # Expand using inheritance to add different player archetypes
@@ -210,15 +238,21 @@ board.append(deck.take_card(False))
 eval = -1
 count = 0
 test_deck = Deck()
+test_hand = []
+straight_ace = False
+
 while eval != 5:
     count += 1
+
     for i in range(7):
         test_deck.shuffle()
     test_hand = []
     for i in range(5):
         test_hand.append(test_deck.take_card(False))
     eval = evaluate_hand(test_hand)
+
 print('...found after ' + str(count) + ' hands')
+
 
 # notes
 # you can take out the in play list, and just use deck or dealt.  It'll be simpler, there's no need to track in play seperately
