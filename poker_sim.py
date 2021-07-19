@@ -1,11 +1,11 @@
 import random
 
-# starting by ignoring suits and altering face cards to int
 class Deck:
     def __init__(self):
         self.deck = []
         self.discard = []
         self.in_play = []
+        # try rewriting into one loop with a dict?
         suit = 'H'
         for card in range(2,15):
             self.deck.extend([[card, suit]])
@@ -18,7 +18,6 @@ class Deck:
         suit = 'S'
         for card in range(2,15):
             self.deck.extend([[card, suit]])
-        print(self.deck)
     def get_size(self):
         return len(self.deck)
     def get_discard_size(self):
@@ -58,7 +57,55 @@ class Deck:
         print('In play: ' + str(len(self.in_play)))
         print('Discarded: ' + str(len(self.discard)))
         print('Remaining: ' + str(len(self.deck)))
-    
+
+def evaluate_hand(hand):
+    quads = False
+    trips = False
+    pair_one = False
+    pair_two = False
+    flush = False
+    straight = False
+# check for quads, trips, pairs
+# find highest card
+# check for flush
+    print('Checking for flush in ' + str(hand))
+    suits = set()
+    for i in range(len(hand)):
+        suits.add(hand[i][1])
+    if len(suits) == 1:
+        flush = True
+
+# check for straight
+# check for kickers
+# calculate value
+    if flush and straight:
+        print('Straight Flush')
+        return 8
+    elif quads:
+        print('Four of a Kind')
+        return 7
+    elif trips and (pair_one or pair_two): 
+        print('Full House')
+        return 6
+    elif flush:
+        print('Flush')
+        return 5
+    elif straight:
+        print('Straight')
+        return 4
+    elif trips:
+        print('Three of a Kind')
+        return 3
+    elif pair_one and pair_two:
+        print('Two Pair')
+        return 2
+    elif pair_one or pair_two:
+        print('Pair')
+        return 1
+    else:
+        print('High Card')
+        return 0
+
 # Expand using inheritance to add different player archetypes
 class Player:
     def __init__(self, name, chips, position):
@@ -135,7 +182,6 @@ def game_details():
 deck = Deck()
 deck.shuffle()
 board = []
-deck.list_deck()
 pot = 0
 # Deal
 for i in range(player_count):
@@ -146,28 +192,33 @@ for i in range(player_count):
 pot += players[1].bet(sb)
 pot += players[2].bet(bb)
 
-
-game_details()
-deck.info()
 # Flop
 deck.take_card(True) #Burn
 board.append(deck.take_card(False))
 board.append(deck.take_card(False))
 board.append(deck.take_card(False))
-print('Board: ' + str(board))
+
 # Turn
 deck.take_card(True) #Burn
 board.append(deck.take_card(False))
-print('Board: ' + str(board))
+
 # River
 deck.take_card(True) #Burn
 board.append(deck.take_card(False))
-print('Board: ' + str(board))
-game_details()
-deck.info()
-deck.list_deck()
-deck.list_discard()
-deck.list_in_play()
+
+# for testing hand eval
+eval = -1
+count = 0
+test_deck = Deck()
+while eval != 5:
+    count += 1
+    for i in range(7):
+        test_deck.shuffle()
+    test_hand = []
+    for i in range(5):
+        test_hand.append(test_deck.take_card(False))
+    eval = evaluate_hand(test_hand)
+print('...found after ' + str(count) + ' hands')
 
 # notes
 # you can take out the in play list, and just use deck or dealt.  It'll be simpler, there's no need to track in play seperately
