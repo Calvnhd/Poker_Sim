@@ -1,4 +1,6 @@
 import random
+# milestone 1 tbc -- generate a large number of hands, rank them all and display
+# milestone -- automate one six player game worth of hands, rank, print result
 
 # Deck of cards class
 # 52 Cards of [rank,suit] in a nested list [[r,s],[r,s],[r,s]...]
@@ -256,7 +258,7 @@ def make_hands(H, B):
     if (len(h) + len(b)) == 5: # 3 cards on board (flop)
         return best
     elif (len(h) + len(b)) == 6: # 4 cards on board (turn)
-        for i in range(5):
+        for i in range(6):
             test = []
             if i < 2:
                 test.append(h[i]) 
@@ -346,6 +348,13 @@ board.append(deck.take_card())
 board.append(deck.take_card())
 board.append(deck.take_card())
 
+print_game_details()
+print('BOARD')
+print(board)
+
+player_best = make_hands(p1.hand, board)
+print(player_best)
+
 # Turn
 deck.take_card() #Burn
 board.append(deck.take_card())
@@ -355,39 +364,39 @@ deck.take_card() #Burn
 board.append(deck.take_card())
 
 # for testing hand
-eval = -1
-test_deck = Deck()
-count = 0
+# eval = -1
+# test_deck = Deck()
+# count = 0
 
-eval_code = []
-while eval != 100:
-    count += 1
-    for i in range(7):
-        test_deck.shuffle()
+# eval_code = []
+# while eval != 100:
+#     count += 1
+#     for i in range(7):
+#         test_deck.shuffle()
 
-    h1 = []
-    h2 = []
-    for i in range(5):
-        h1.append(test_deck.take_card())
-        h2.append(test_deck.take_card())
+#     h1 = []
+#     h2 = []
+#     for i in range(5):
+#         h1.append(test_deck.take_card())
+#         h2.append(test_deck.take_card())
 
-    e_h1 = evaluate_hand(h1)
-    e_h2 = evaluate_hand(h2)
+#     e_h1 = evaluate_hand(h1)
+#     e_h2 = evaluate_hand(h2)
 
-    print('\nh1: ' + str(h1)) 
-    print(interpret_eval(e_h1))
-    print('h2: ' + str(h2))
-    print(interpret_eval(e_h2))
+#     print('\nh1: ' + str(h1)) 
+#     print(interpret_eval(e_h1))
+#     print('h2: ' + str(h2))
+#     print(interpret_eval(e_h2))
 
-    comp = compare_hands(e_h1, e_h2)
-    if comp == 0:
-        print('These hands are equal\n')
-    else:
-        print('Winner: ' + interpret_eval(comp))
+#     comp = compare_hands(e_h1, e_h2)
+#     if comp == 0:
+#         print('These hands are equal\n')
+#     else:
+#         print('Winner: ' + interpret_eval(comp))
     
-    eval +=1
+#     eval +=1
 
-# print('...found after ' + str(count) + ' hands')
+# # print('...found after ' + str(count) + ' hands')
 
 
 # notes
