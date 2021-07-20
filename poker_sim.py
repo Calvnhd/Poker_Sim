@@ -81,8 +81,6 @@ def evaluate_hand(hand):
     ranks_sorted = sorted(ranks)            # low to high ranks without duplicates
     ranks_sorted_all = sorted(ranks_all)    # low to high ranks with duplicates
 
-    print('\nAnalyzing... ' + str(hand))
-
     if len(suits) == 1:  # Check for flush
         flush = True
     if len(ranks) == 5:  # Check for straight
@@ -123,63 +121,112 @@ def evaluate_hand(hand):
 
         kickers = sorted(kickers, reverse=True)
 
-    print('Contains ranks ' + str(ranks_sorted) + ' occurring ' + str(count) + ' times respectively.   Kickers: ' + str(kickers))
+    # print('Contains ranks ' + str(ranks_sorted) + ' occurring ' + str(count) + ' times respectively.   Kickers: ' + str(kickers))
 
     # Determine value
-    if flush and straight and (max(ranks_sorted) == 14):
-        print('Royal Flush')
+    if flush and straight and (max(ranks_sorted) == 14):  # Royal Flush
         value[0] = 9
         value.append(max(ranks_sorted))
         return value
-    if flush and straight:
-        print('Straight Flush')
+    if flush and straight: # Straight Flush
         value[0] =  8
         value.append(max(ranks_sorted)) # use sorted var to account for possible low Ace
         return value
-    elif quads:
-        print('Four of a Kind')
+    elif quads: # Four of a Kind
         value[0] =  7
         value.append(quad_compare)
         value.extend(kickers) 
         return value
-    elif trips and (pair_one or pair_two): 
-        print('Full House')
+    elif trips and (pair_one or pair_two): # Full House
         value[0] =  6
         value.extend(fh_compare)
         return value
-    elif flush:
-        print('Flush')
+    elif flush:  # Flush
         value[0] =  5
         value.extend(kickers)
         return value
-    elif straight:
-        print('Straight')
+    elif straight: # Straight
         value[0] =  4
         value.append(max(ranks_sorted)) # use sorted var to account for possible low Ace
         return value
-    elif trips:
-        print('Three of a Kind')
+    elif trips: # Three of a kind
         value[0] =  3
         value.append(trip_compare)
         value.extend(kickers)
         return value
-    elif pair_one and pair_two:
-        print('Two Pair')
+    elif pair_one and pair_two: # Two Pair
         value[0] =  2
         two_pair_compare = sorted(two_pair_compare, reverse=True)
         value.extend(two_pair_compare)
-        value.append(kickers)
+        value.extend(kickers)
         return value
-    elif pair_one or pair_two:
-        print('Pair')
+    elif pair_one or pair_two: # Pair
         value[0] =  1
         value.append(pair_compare)
         value.extend(kickers)
         return value
-    else:
-        print('High Card')
+    else: # High Card
         value.extend(kickers)
         return value
+
+# takes code from evaluate_hand and returns its meaning in a string
+def interpret_eval(x):
+    code = x[:] 
+    for i in range(1, len(code)):
+        if code[i] == 11:
+            code[i] = 'J'
+        elif code[i] == 12:
+            code[i] = 'Q'
+        elif code[i] == 13:
+            code[i] = 'K'
+        elif code[i] == 14:
+            code[i] = 'A'
+        
+    #Output message
+    if code[0] == 9:
+        output = 'Royal Flush!'
+    elif code[0] == 8 and len(code) == 2:
+        output = 'Straight Flush, ' + str(code[1]) + ' high'
+    elif code[0] == 7 and len(code) == 3:
+        output = 'Four of a Kind, ' + str(code[1]) + 's with ' + str(code[2]) + ' kicker'
+    elif code[0] == 6 and len(code) == 3:
+        output = 'Full House, ' + str(code[1]) + 's full of ' + str(code[2]) + 's'
+    elif code[0] == 5 and len(code) == 6:
+        output = 'Flush, ' + str(code[1]) + ' high followed by ' + str(code[2]) + ' ' + str(code[3]) + ' ' +  str(code[4]) + ' ' +  str(code[5])
+    elif code[0] == 4 and len(code) == 2:
+        output = 'Straight, ' + str(code[1]) + ' high'
+    elif code[0] == 3 and len(code) == 4:
+        output = 'Three of a Kind, ' + str(code[1]) + 's with ' + str(code[2]) + ' ' + str(code[3]) + ' kickers'
+    elif code[0] == 2 and len(code) == 4:
+        output = 'Two Pair, ' + str(code[1]) + 's and ' + str(code[2]) + 's with ' + str(code[3]) + ' kicker'
+    elif code[0] == 1  and len(code) == 5:
+        output = 'Pair of ' + str(code[1]) + 's, with '+ str(code[2]) + ' ' + str(code[3]) + ' ' + str(code[4]) + ' kickers'
+    elif code[0] == 0 and len(code) == 6:
+        output = str(code[1]) + ' High, followed by ' + str(code[2]) + ' ' + str(code[3]) + ' ' + str(code[4]) + ' ' + str(code[5])
+    else:
+        output = 'ERROR INTERPRETTING HAND EVALUATION CODE'
+    return output
+
+# Compares hands h1 and h2
+# h1 and h2 must be output from evaluate_hand
+# returns the best of h1 or h2 in the same format as input, or 0 if they are equal
+def compare_hands(h1, h2, i=0):
+    if i == 7: # Base case
+        print('ERROR COMPARING HANDS')
+        return -1
+    if h1 == h2:
+        return 0
+    if h1[i] > h2[i]:
+        return h1
+    elif h1[i] < h2[i]:
+        return h2
+    else:
+        if h1[i] == h2[i] and len(h1) == len(h2):
+            i += 1
+            return compare_hands(h1,h2,i)
+        else:
+            print('ERROR COMPARING HANDS')
+            return -1
 
 # Expand using inheritance to add different player archetypes
 class Player:
@@ -255,30 +302,44 @@ board.append(deck.take_card())
 deck.take_card() #Burn
 board.append(deck.take_card())
 
-# for testing hand eval
+# for testing hand
 eval = -1
-count = 0
 test_deck = Deck()
-test_hand = []
-straight_ace = False
+count = 0
 
+eval_code = []
 while eval != 100:
     count += 1
-
-    manual_hand = [[14,'S'],[3,'S'],[2,'S'],[4,'S'],[5,'D']]
-
     for i in range(7):
         test_deck.shuffle()
-    test_hand = []
-    for i in range(5):
-        test_hand.append(test_deck.take_card())
-    eval_list = evaluate_hand(test_hand)
-#   eval_list = evaluate_hand(manual_hand)
-    print('Eval code: ' + str(eval_list))
-    if (eval_list[0] == 2): #and (eval_list[1] == 5):
-        eval = 100
 
-print('...found after ' + str(count) + ' hands')
+    for i in range(5):
+        h1.append(test_deck.take_card())
+        h2.append(test_deck.take_card())
+
+    e_h1 = evaluate_hand(h1)
+    e_h2 = evaluate_hand(h2)
+
+    print('h1: ' + str(h1)) 
+    print(interpret_eval(e_h1))
+    print('h2: ' + str(h2))
+    print(interpret_eval(e_h2))
+
+    print('\n')
+    print('Eval code for h1: ' + str(e_h1))
+    print('Eval code for h2: ' + str(e_h2) + '\n')
+
+    comp = compare_hands(e_h1, e_h2)
+    print('results of comp: ' + str(comp))
+    if comp == 0:
+        print('These hands are equal\n')
+    else:
+        print('The winning hand is... ' + interpret_eval(comp))
+        print('\n')
+    
+    eval = 100
+
+# print('...found after ' + str(count) + ' hands')
 
 
 # notes
