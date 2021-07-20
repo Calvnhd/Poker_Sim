@@ -51,43 +51,61 @@ def evaluate_hand(hand):
     pair_two = False
     flush = False
     straight = False
+    value = 0
 
     ranks = set()    
+    ranks_all = []
     suits = set()
     for i in range(len(hand)):
-        ranks.add(hand[i][0])
-        suits.add(hand[i][1])
-    ranks_sorted = sorted(ranks)
+        ranks.add(hand[i][0])               # unordered ranks without duplicates
+        ranks_all.append(hand[i][0])        # unordered ranks with duplicates
+        suits.add(hand[i][1])               # unordered suits
+    ranks_sorted = sorted(ranks)            # low to high ranks without duplicates
+    ranks_sorted_all = sorted(ranks_all)    # low to high ranks with duplicates
 
-    print('evaluating...' + str(hand))
+    print('Analyzing... ' + str(hand))
 
-# check for flush
-    if len(suits) == 1:
+    if len(suits) == 1:  # Check for flush
         flush = True
-# check for straight
-    if len(ranks) == 5:
-        # this seems too brute?
+        value = max(ranks)
+    if len(ranks) == 5:  # Check for straight
         if ranks_sorted[4] == 14 and ranks_sorted[3] == 5: # Ace is low
             ranks_sorted[4] == 1
             ranks_sorted = sorted(ranks_sorted)
         if ((ranks_sorted[0] + 1) == ranks_sorted[1]) and ((ranks_sorted[1] + 1) == ranks_sorted[2]) and ((ranks_sorted[2] + 1) == ranks_sorted[3]) and ((ranks_sorted[3] + 1) == ranks_sorted[4]):
             straight = True
-    elif len(ranks) == 4: # check for quads, trips, pairs
-        pair_one = True
-    elif len(ranks) == 3:
-        pass
-    else:
-        pass
-#1 2 3 4 5 -- set of 5 -- high card DONE
-#1 1 2 3 4 -- set of 4 -- one pair
-#1 1 2 2 3 -- set of 3 -- two pair
-#1 1 1 2 3 -- set of 3 -- 3 of a kind
-#1 1 1 2 2 -- set of 2 -- full house
-#1 1 1 1 2 -- set of 2 -- quads
+            value = max(ranks_sorted)
+        else:
+            value = max(ranks) # High card
+    else: 
+        count = []
+        kickers = []
 
-# find highest card
+        # count duplicate cards
+        for i in range(len(ranks_sorted)): 
+            c = 0
+            for j in range(len(ranks_sorted_all)):
+                if ranks_sorted_all[j] == ranks_sorted[i]:
+                    c += 1
+            count.append(c)
 
-# check for kickers
+        # determine hand
+        for i in range(len(count)):
+            if count[i] == 1: 
+                kickers.append(ranks_sorted[i])
+            elif count[i] == 4:
+                quads = True
+            elif count[i] == 3:
+                trips = True
+            elif count[i] == 2 and not pair_one:
+                pair_one = True
+            elif count[i] == 2 and pair_one:
+                pair_two = True       
+
+        print('Contains ranks ' + str(ranks_sorted))
+        print('Occurring ' + str(count) + ' respectively')
+        print('Kickers: ' + str(kickers))
+
 # calculate value
     if flush and straight and (ranks_sorted[4] == 14):
         print('Royal Flush')
@@ -117,7 +135,7 @@ def evaluate_hand(hand):
         print('Pair')
         return 1
     else:
-        #print('High Card')
+        print('High Card: ' + str(value))
         return 0
 
 # Expand using inheritance to add different player archetypes
@@ -143,34 +161,8 @@ class Player:
     def get_hand(self):
         return self.hand
 
-# INTERACTIVE INPUTS CAN COME LATER
-#print("\n ===== Welcome to Calvin's Poker Simulator! =====")
-#deck = Deck()
-#deck.shuffle()
-#player_count = int(input('\nEnter number of players: '))
-#while player_count != 3:
-#    print('This poker sim is currently limited to 3 players')
-#    print('Please enter 3')
-#    print("I know it's silly to ask. This will be updated eventually, I promise :)")
- #   player_count = int(input('Enter number of players: '))
-#starting_stack = int(input('Enter starting chip stack: '))
-#while starting_stack < 100 or starting_stack > 300:    
-#    print('Starting stack must be between 100 and 300 chips')
-#    starting_stack = int(input('Enter starting chip stack: '))
-#bb = int(input('Enter Big Blind: '))
-#while bb < 2 or bb > 10:
-#    print('Big Blind must be between 1 and 10 chips')
-#    bb = int(input('Enter Big Blind: '))
-#sb = bb /2
-
-# Update this with a for loop to have a flexible number of players (3 to 8)
-#p1 = Player(input('Player 1 name: '), starting_stack, 0)
-#p2 = Player(input('Player 2 name: '), starting_stack, 1)
-#p3 = Player(input('Player 3 name: '), starting_stack, 2)
-
-#print('\n===== Set-up complete! =====\n')
-
 print("\n ===== Welcome to Calvin's Poker Simulator! =====")
+
 player_count = 3
 starting_stack = 300
 bb = 2
@@ -183,7 +175,7 @@ p3 = Player('Beattie', starting_stack, 2)
 players = [p1, p2, p3]
 
 # Update to pass in variables of game for re-useability
-def game_details():
+def print_game_details():
     print('\n===  Player Status ===')
     print(str(player_count) + ' Players')
     p1.get_info()
@@ -227,7 +219,7 @@ test_deck = Deck()
 test_hand = []
 straight_ace = False
 
-while eval != 5:
+while eval != 9:
     count += 1
 
     for i in range(7):
