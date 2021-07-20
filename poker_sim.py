@@ -3,8 +3,7 @@ import random
 class Deck:
     def __init__(self):
         self.deck = []
-        self.discard = []
-        self.in_play = []
+        self.removed = []
         # try rewriting into one loop with a dict?
         suit = 'H'
         for card in range(2,15):
@@ -20,43 +19,30 @@ class Deck:
             self.deck.extend([[card, suit]])
     def get_size(self):
         return len(self.deck)
-    def get_discard_size(self):
-        return len(self.discard)
-    def get_in_play_size(self):
-        return len(self.in_play)
+    def get_removed_size(self):
+        return len(self.removed)
     def shuffle(self):
         shuffled = []
-        if len(self.discard) > 0:
-            self.deck.extend(self.discard)
-            self.discard = []
-        if len(self.in_play) > 0:
-            self.deck.extend(self.in_play)
-            self.in_play = []
+        if len(self.removed) > 0:
+            self.deck.extend(self.removed)
+            self.removed = []
         for card in range(len(self.deck)):
             shuffled.append(self.deck.pop(random.randint(0, len(self.deck)-1)))
         self.deck = shuffled[:]
         if len(self.deck) != 52:
             print("WARNING: something has gone wrong with your shuffling") # Figure out how to throw proper error messages and update this
-    def add_discard(self, card):
-        self.discard.append(card)
-    def take_card(self, is_discard):
+    def take_card(self):
         card = self.deck.pop(0)
-        if is_discard:
-            self.discard.append(card)
-        else:
-            self.in_play.append(card)
+        self.removed.append(card)
         return card
     def list_deck(self):
         print(self.deck)
-    def list_discard(self):
-        print(self.discard)
-    def list_in_play(self):
-        print(self.in_play)
+    def list_removed(self):
+        print(self.removed)
     def info(self):
         print('Number of cards...')
-        print('In play: ' + str(len(self.in_play)))
-        print('Discarded: ' + str(len(self.discard)))
         print('Remaining: ' + str(len(self.deck)))
+        print('Removed: ' + str(len(self.removed)))
 
 def evaluate_hand(hand):
     quads = False
@@ -73,7 +59,7 @@ def evaluate_hand(hand):
         suits.add(hand[i][1])
     ranks_sorted = sorted(ranks)
 
-    print(hand)
+    print('evaluating...' + str(hand))
 
 # check for flush
     if len(suits) == 1:
@@ -213,26 +199,26 @@ board = []
 pot = 0
 # Deal
 for i in range(player_count):
-    players[i].give_card(deck.take_card(False))
+    players[i].give_card(deck.take_card())
 for i in range(player_count):
-    players[i].give_card(deck.take_card(False))
+    players[i].give_card(deck.take_card())
 
 pot += players[1].bet(sb)
 pot += players[2].bet(bb)
 
 # Flop
-deck.take_card(True) #Burn
-board.append(deck.take_card(False))
-board.append(deck.take_card(False))
-board.append(deck.take_card(False))
+deck.take_card() #Burn
+board.append(deck.take_card())
+board.append(deck.take_card())
+board.append(deck.take_card())
 
 # Turn
-deck.take_card(True) #Burn
-board.append(deck.take_card(False))
+deck.take_card() #Burn
+board.append(deck.take_card())
 
 # River
-deck.take_card(True) #Burn
-board.append(deck.take_card(False))
+deck.take_card() #Burn
+board.append(deck.take_card())
 
 # for testing hand eval
 eval = -1
@@ -248,7 +234,7 @@ while eval != 5:
         test_deck.shuffle()
     test_hand = []
     for i in range(5):
-        test_hand.append(test_deck.take_card(False))
+        test_hand.append(test_deck.take_card())
     eval = evaluate_hand(test_hand)
 
 print('...found after ' + str(count) + ' hands')
