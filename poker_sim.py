@@ -49,22 +49,26 @@ class Deck:
 
 # Evaluates a five card hand
 # Takes list of ranks & suits [[r,s],[r,s],[r,s],[r,s],[r,s]]
-# Returns [i,j] where i is hand ranking
+# Returns evaluation code [hand_ranking, same_hand_comparison, kickers]
 # Need to update to compare value of same hands
 def evaluate_hand(hand):
+    # Bool for making a hand
     quads = False
     trips = False
     pair_one = False
     pair_two = False
     flush = False
     straight = False
+    # Values to compare same hand
     kickers = []
-    fh_compare = [0,0]
-    quad_compare = 0
+    fh_compare = [0,0]  # stores [trip,pair]
+    quad_compare = 0   
     trip_compare = 0
     two_pair_compare = [0,0]
     pair_compare = 0
+    # For counting duplicate cards
     count = []
+    # Returning value
     value = [0]  
 
     ranks = set()    
@@ -83,7 +87,7 @@ def evaluate_hand(hand):
         flush = True
     if len(ranks) == 5:  # Check for straight
         if ranks_sorted[4] == 14 and ranks_sorted[3] == 5: # Ace is low
-            ranks_sorted[4] == 1
+            ranks_sorted[4] = 1
             ranks_sorted = sorted(ranks_sorted)
         if ((ranks_sorted[0] + 1) == ranks_sorted[1]) and ((ranks_sorted[1] + 1) == ranks_sorted[2]) and ((ranks_sorted[2] + 1) == ranks_sorted[3]) and ((ranks_sorted[3] + 1) == ranks_sorted[4]):
             straight = True
@@ -97,7 +101,7 @@ def evaluate_hand(hand):
                 if ranks_sorted_all[j] == ranks_sorted[i]:
                     c += 1
             count.append(c)
-        # Find quads / trips / pairs
+        # Find quads / trips / pairs based on final count value
         for i in range(len(count)):
             if count[i] == 1: 
                 kickers.append(ranks_sorted[i])
@@ -115,7 +119,8 @@ def evaluate_hand(hand):
             elif count[i] == 2 and pair_one:
                 pair_two = True
                 two_pair_compare[0] = pair_compare
-                two_pair_compare[1] = ranks_sorted[i]       
+                two_pair_compare[1] = ranks_sorted[i]
+
         kickers = sorted(kickers, reverse=True)
 
     print('Contains ranks ' + str(ranks_sorted) + ' occurring ' + str(count) + ' times respectively.   Kickers: ' + str(kickers))
@@ -135,18 +140,17 @@ def evaluate_hand(hand):
         print('Four of a Kind')
         value[0] =  7
         value.append(quad_compare)
-        value.append(max(kickers)) # should only have one value anyway
+        value.extend(kickers) 
         return value
     elif trips and (pair_one or pair_two): 
         print('Full House')
         value[0] =  6
-        value.append(fh_compare[0]) # change to extend
-        value.append(fh_compare[1])
+        value.extend(fh_compare)
         return value
     elif flush:
         print('Flush')
         value[0] =  5
-        value.append(max(ranks_sorted))
+        value.extend(kickers)
         return value
     elif straight:
         print('Straight')
@@ -157,15 +161,14 @@ def evaluate_hand(hand):
         print('Three of a Kind')
         value[0] =  3
         value.append(trip_compare)
-        value.append(kickers[0]) # change to extend
-        value.append(kickers[1])
+        value.extend(kickers)
         return value
     elif pair_one and pair_two:
         print('Two Pair')
         value[0] =  2
         two_pair_compare = sorted(two_pair_compare, reverse=True)
         value.extend(two_pair_compare)
-        value.append(kickers[0])
+        value.append(kickers)
         return value
     elif pair_one or pair_two:
         print('Pair')
@@ -175,7 +178,7 @@ def evaluate_hand(hand):
         return value
     else:
         print('High Card')
-        value.append(max(ranks_sorted))
+        value.extend(kickers)
         return value
 
 # Expand using inheritance to add different player archetypes
@@ -259,8 +262,10 @@ test_deck = Deck()
 test_hand = []
 straight_ace = False
 
-while eval != 1:
+while eval != 100:
     count += 1
+
+    manual_hand = [[14,'S'],[3,'S'],[2,'S'],[4,'S'],[5,'D']]
 
     for i in range(7):
         test_deck.shuffle()
@@ -268,8 +273,10 @@ while eval != 1:
     for i in range(5):
         test_hand.append(test_deck.take_card())
     eval_list = evaluate_hand(test_hand)
+#   eval_list = evaluate_hand(manual_hand)
     print('Eval code: ' + str(eval_list))
-    eval = eval_list[0]
+    if (eval_list[0] == 2): #and (eval_list[1] == 5):
+        eval = 100
 
 print('...found after ' + str(count) + ' hands')
 
