@@ -1,10 +1,13 @@
 import random
 
+# Deck of cards class
+# 52 Cards of [rank,suit] in a nested list [[r,s],[r,s],[r,s]...]
 class Deck:
     def __init__(self):
-        self.deck = []
-        self.removed = []
-        # try rewriting into one loop with a dict?
+        self.deck = []      # Track cards in deck
+        self.removed = []   # Track cards pulled from deck (in play and discarded)
+
+        # Build deck
         suit = 'H'
         for card in range(2,15):
             self.deck.extend([[card, suit]])
@@ -17,11 +20,11 @@ class Deck:
         suit = 'S'
         for card in range(2,15):
             self.deck.extend([[card, suit]])
-    def get_size(self):
+    def get_size(self):         # Get number of cards (remaining) in deck
         return len(self.deck)
-    def get_removed_size(self):
+    def get_removed_size(self): # Get number of cards removed from deck
         return len(self.removed)
-    def shuffle(self):
+    def shuffle(self):          # Recombine all cards into deck and shuffle
         shuffled = []
         if len(self.removed) > 0:
             self.deck.extend(self.removed)
@@ -31,19 +34,23 @@ class Deck:
         self.deck = shuffled[:]
         if len(self.deck) != 52:
             print("WARNING: something has gone wrong with your shuffling") # Figure out how to throw proper error messages and update this
-    def take_card(self):
+    def take_card(self):        # Take card from top of deck (removed card tracked in removed[])
         card = self.deck.pop(0)
         self.removed.append(card)
         return card
-    def list_deck(self):
+    def list_deck(self):        # Print cards (remaining) in deck
         print(self.deck)
-    def list_removed(self):
+    def list_removed(self):     # Print cards removed from deck
         print(self.removed)
-    def info(self):
+    def info(self):             # Print number of cards remaining & removed
         print('Number of cards...')
         print('Remaining: ' + str(len(self.deck)))
         print('Removed: ' + str(len(self.removed)))
 
+# Evaluates a five card hand
+# Takes list of ranks & suits [[r,s],[r,s],[r,s],[r,s],[r,s]]
+# Returns [i,j] where i is hand ranking
+# Need to update to compare value of same hands
 def evaluate_hand(hand):
     quads = False
     trips = False
@@ -51,7 +58,14 @@ def evaluate_hand(hand):
     pair_two = False
     flush = False
     straight = False
-    value = 0
+    kickers = []
+    fh_compare = [0,0]
+    quad_compare = 0
+    trip_compare = 0
+    two_pair_compare = [0,0]
+    pair_compare = 0
+    count = []
+    value = [0]  
 
     ranks = set()    
     ranks_all = []
@@ -63,24 +77,19 @@ def evaluate_hand(hand):
     ranks_sorted = sorted(ranks)            # low to high ranks without duplicates
     ranks_sorted_all = sorted(ranks_all)    # low to high ranks with duplicates
 
-    print('Analyzing... ' + str(hand))
+    print('\nAnalyzing... ' + str(hand))
 
     if len(suits) == 1:  # Check for flush
         flush = True
-        value = max(ranks)
     if len(ranks) == 5:  # Check for straight
         if ranks_sorted[4] == 14 and ranks_sorted[3] == 5: # Ace is low
             ranks_sorted[4] == 1
             ranks_sorted = sorted(ranks_sorted)
         if ((ranks_sorted[0] + 1) == ranks_sorted[1]) and ((ranks_sorted[1] + 1) == ranks_sorted[2]) and ((ranks_sorted[2] + 1) == ranks_sorted[3]) and ((ranks_sorted[3] + 1) == ranks_sorted[4]):
             straight = True
-            value = max(ranks_sorted)
-        else:
-            value = max(ranks) # High card
+        else: # High Card
+            kickers = sorted(ranks, reverse=True)
     else: 
-        count = []
-        kickers = []
-
         # count duplicate cards
         for i in range(len(ranks_sorted)): 
             c = 0
@@ -88,55 +97,86 @@ def evaluate_hand(hand):
                 if ranks_sorted_all[j] == ranks_sorted[i]:
                     c += 1
             count.append(c)
-
-        # determine hand
+        # Find quads / trips / pairs
         for i in range(len(count)):
             if count[i] == 1: 
                 kickers.append(ranks_sorted[i])
             elif count[i] == 4:
                 quads = True
+                quad_compare = ranks_sorted[i]
             elif count[i] == 3:
                 trips = True
+                fh_compare[0] = ranks_sorted[i]
+                trip_compare = ranks_sorted[i]
             elif count[i] == 2 and not pair_one:
                 pair_one = True
+                pair_compare = ranks_sorted[i]
+                fh_compare[1] = ranks_sorted[i]
             elif count[i] == 2 and pair_one:
-                pair_two = True       
+                pair_two = True
+                two_pair_compare[0] = pair_compare
+                two_pair_compare[1] = ranks_sorted[i]       
+        kickers = sorted(kickers, reverse=True)
 
-        print('Contains ranks ' + str(ranks_sorted))
-        print('Occurring ' + str(count) + ' respectively')
-        print('Kickers: ' + str(kickers))
+    print('Contains ranks ' + str(ranks_sorted) + ' occurring ' + str(count) + ' times respectively.   Kickers: ' + str(kickers))
 
-# calculate value
-    if flush and straight and (ranks_sorted[4] == 14):
+    # Determine value
+    if flush and straight and (max(ranks_sorted) == 14):
         print('Royal Flush')
-        return 9
+        value[0] = 9
+        value.append(max(ranks_sorted))
+        return value
     if flush and straight:
         print('Straight Flush')
-        return 8
+        value[0] =  8
+        value.append(max(ranks_sorted)) # use sorted var to account for possible low Ace
+        return value
     elif quads:
         print('Four of a Kind')
-        return 7
+        value[0] =  7
+        value.append(quad_compare)
+        value.append(max(kickers)) # should only have one value anyway
+        return value
     elif trips and (pair_one or pair_two): 
         print('Full House')
-        return 6
+        value[0] =  6
+        value.append(fh_compare[0]) # change to extend
+        value.append(fh_compare[1])
+        return value
     elif flush:
         print('Flush')
-        return 5
+        value[0] =  5
+        value.append(max(ranks_sorted))
+        return value
     elif straight:
         print('Straight')
-        return 4
+        value[0] =  4
+        value.append(max(ranks_sorted)) # use sorted var to account for possible low Ace
+        return value
     elif trips:
         print('Three of a Kind')
-        return 3
+        value[0] =  3
+        value.append(trip_compare)
+        value.append(kickers[0]) # change to extend
+        value.append(kickers[1])
+        return value
     elif pair_one and pair_two:
         print('Two Pair')
-        return 2
+        value[0] =  2
+        two_pair_compare = sorted(two_pair_compare, reverse=True)
+        value.extend(two_pair_compare)
+        value.append(kickers[0])
+        return value
     elif pair_one or pair_two:
         print('Pair')
-        return 1
+        value[0] =  1
+        value.append(pair_compare)
+        value.extend(kickers)
+        return value
     else:
-        print('High Card: ' + str(value))
-        return 0
+        print('High Card')
+        value.append(max(ranks_sorted))
+        return value
 
 # Expand using inheritance to add different player archetypes
 class Player:
@@ -219,7 +259,7 @@ test_deck = Deck()
 test_hand = []
 straight_ace = False
 
-while eval != 9:
+while eval != 1:
     count += 1
 
     for i in range(7):
@@ -227,11 +267,12 @@ while eval != 9:
     test_hand = []
     for i in range(5):
         test_hand.append(test_deck.take_card())
-    eval = evaluate_hand(test_hand)
+    eval_list = evaluate_hand(test_hand)
+    print('Eval code: ' + str(eval_list))
+    eval = eval_list[0]
 
 print('...found after ' + str(count) + ' hands')
 
 
 # notes
-# you can take out the in play list, and just use deck or dealt.  It'll be simpler, there's no need to track in play seperately
 # use a dictionary for player names and positions?
