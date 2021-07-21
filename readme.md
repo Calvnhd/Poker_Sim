@@ -3,6 +3,12 @@
 A poker simulator by Calvin Davidson (work in progress)
 ## Progress Notes
 ### In Progress
-some in progress things
+Make game loopable
+Add betting, basic first, then extend Player class with archetypes
+Add statistic tracking
 ### Complete
-some complete things
+Deck builder and dealing hands
+Analysing a 5 card hand
+Find the best hand out of 5 to 7 cards
+Comparing two hands, comparing multiple hands
+Single game (not looped), no betting
