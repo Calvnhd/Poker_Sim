@@ -1,9 +1,4 @@
 import random
-<<<<<<< HEAD
-# currently on master
-=======
-# currently on redo
->>>>>>> redo_deck
 # milestone 1 tbc -- generate a large number of hands, rank them all and display
 # milestone -- automate one six player game worth of hands, rank, print result
 
@@ -350,6 +345,8 @@ class Player:
         self.hand.append(card)
     def get_hand(self):
         return self.hand
+    def get_name(self):
+        return str(self.name)
 
 # Update to pass in variables of game for re-useability
 def print_game_details():
@@ -359,6 +356,16 @@ def print_game_details():
     p2.get_info()
     p3.get_info()
     print('Pot: ' + str(pot))
+
+# Takes a list of hands, and returns the best one
+# Try different sorting algorithms?
+def find_best_hand(hands):
+    best = hands[0]
+    if len(hands) > 1:
+        for h in range(1, len(hands)):
+            best = compare_hands(best, hands[h])
+    return best
+
 
 print("\n ===== Welcome to Calvin's Poker Simulator! =====")
 
@@ -372,6 +379,8 @@ p1 = Player('Calvin', starting_stack, 0)
 p2 = Player('Ian', starting_stack, 1)
 p3 = Player('Beattie', starting_stack, 2)
 players = [p1, p2, p3]
+leaders = []
+chip_leader = players[0] # make a find chip leader function
 
 # Deal a hand
 # figure out how to break this into loopable steps
@@ -396,34 +405,84 @@ board.append(deck.take_card())
 board.append(deck.take_card())
 board.append(deck.take_card())
 
-print('============')
-player_best = make_hands(p1.get_hand(), board)
-print('\nRESULTS:\np1 (Calvin) hand: ' +  str(p1.get_hand()))
+print('\nFLOP  ============')
+p1_best = make_hands(p1.get_hand(), board)
+p2_best = make_hands(p2.get_hand(), board)
+p3_best = make_hands(p3.get_hand(), board)
+best_hand = find_best_hand([p1_best, p2_best, p3_best])
 print('board: ' + str(board))
-print('current p1 best: ' + str(player_best) + ' -- ' + interpret_eval(player_best))
-print('')
+print('p1: ' + interpret_eval(p1_best))
+print('p2: ' + interpret_eval(p2_best))
+print('p3: ' + interpret_eval(p3_best))
+print('best hand: ' + interpret_eval(best_hand))
+
+leaders = []
+if best_hand == p1_best:
+    leaders.append(p1)
+if best_hand == p2_best:
+    leaders.append(p2)
+if best_hand == p3_best:
+    leaders.append(p3)
+print('found ' + str(len(leaders)) + ' winners')
+for i in range(len(leaders)):
+    print(leaders[i].get_name())
 
 # Turn
 deck.take_card() #Burn
 board.append(deck.take_card())
 
-print('============')
-player_best = make_hands(p1.get_hand(), board)
-print('\nRESULTS:\np1 (Calvin) hand: ' +  str(p1.get_hand()))
+print('\nTURN  ============')
+p1_best = make_hands(p1.get_hand(), board)
+p2_best = make_hands(p2.get_hand(), board)
+p3_best = make_hands(p3.get_hand(), board)
+best_hand = find_best_hand([p1_best, p2_best, p3_best])
 print('board: ' + str(board))
-print('current p1 best: ' + str(player_best) + ' -- ' + interpret_eval(player_best))
-print('')
+print('p1: ' + interpret_eval(p1_best))
+print('p2: ' + interpret_eval(p2_best))
+print('p3: ' + interpret_eval(p3_best))
+print('best hand: ' + interpret_eval(best_hand))
+
+leaders = []
+if best_hand == p1_best:
+    leaders.append(p1)
+if best_hand == p2_best:
+    leaders.append(p2)
+if best_hand == p3_best:
+    leaders.append(p3)
+print('found ' + str(len(leaders)) + ' winners')
+for i in range(len(leaders)):
+    print(leaders[i].get_name())
 
 # River
 deck.take_card() #Burn
 board.append(deck.take_card())
 
-print('============')
-player_best = make_hands(p1.get_hand(), board)
-print('\nRESULTS:\np1 (Calvin) hand: ' +  str(p1.get_hand()))
+print('\nRIVER ============')
+p1_best = make_hands(p1.get_hand(), board)
+p2_best = make_hands(p2.get_hand(), board)
+p3_best = make_hands(p3.get_hand(), board)
+el_board = evaluate_hand(board)
+best_hand = find_best_hand([p1_best, p2_best, p3_best, el_board])
 print('board: ' + str(board))
-print('current p1 best: ' + str(player_best) + ' -- ' + interpret_eval(player_best))
-print('')
+print('Calvin: ' + interpret_eval(p1_best))
+print('Ian: ' + interpret_eval(p2_best))
+print('Beattie: ' + interpret_eval(p3_best))
+print('best hand: ' + interpret_eval(best_hand))
+
+if best_hand == el_board:
+    print('Playing the board.  Split pot!')
+else:
+    leaders = []
+    if best_hand == p1_best:
+        leaders.append(p1)
+    if best_hand == p2_best:
+        leaders.append(p2)
+    if best_hand == p3_best:
+        leaders.append(p3)
+    print('found ' + str(len(leaders)) + ' winners')
+    for i in range(len(leaders)):
+        print(leaders[i].get_name())
+
 
 # for testing hand
 # eval = -1
