@@ -1,5 +1,9 @@
 import random
+<<<<<<< HEAD
 # currently on master
+=======
+# currently on redo
+>>>>>>> redo_deck
 # milestone 1 tbc -- generate a large number of hands, rank them all and display
 # milestone -- automate one six player game worth of hands, rank, print result
 
