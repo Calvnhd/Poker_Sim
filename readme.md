@@ -2,6 +2,9 @@
 ## About
 * A poker simulator by Calvin Davidson (work in progress)
 ## Progress Notes
+### Branches
+* new -- most up to date, new features, work in progress
+* master -- latest milestone
 ### In Progress
 * Make game loopable
 * Add betting
