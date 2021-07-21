@@ -248,81 +248,59 @@ def make_hands(H, B):
         h = B[:]
         b = H[:]
     else:
-        print('ERROR A:  Incorrect input.')
+        print('ERROR:  Incorrect input.')
         return -1
-    # initial best 5: hand and flop
+    # initialize best 5 to hand and flop
     best.extend(h)
     best.extend([b[0], b[1], b[2]])
     el_best = evaluate_hand(best)
-    print('init best: ' + str(el_best) + ' == ' + interpret_eval(el_best))
 
     # Find best 5 card combination
     if (len(h) + len(b)) == 5: # 3 cards on board (flop)
-        print('making hands -- FLOP')
         return el_best
     elif (len(h) + len(b)) == 6: # 4 cards on board (turn)
-        print('making hands -- TURN')
         for i in range(6):
             test = []
-            print('          **** at i == ' + str(i) + ' ****')
-            print('Current best: ' + str(el_best) + ' == ' + interpret_eval(el_best))
             if i < 2:
                 test.append(h[i]) # using just one card from hand
                 test.extend(b)
                 el_test = evaluate_hand(test)
-                print('THIS TEST: ' + str(test))
-                print('Test eval: ' + str(el_test) + ' == ' + interpret_eval(el_test))
-
                 comp = compare_hands(el_test, el_best) # returns eval of best, or 0 if equal 
                 if comp != 0:
                     el_best = comp
-                    print('Best is ' + str(el_best) + ' == ' + interpret_eval(el_best))
             else:
                 test.extend(h)  # using both cards in hand
                 hold = b[:]     # copy data to keep original board info b[] intact
-                hold.pop(i-2)   # select three of the four cards on board
+                hold.pop(i-2)   # select three of the four cards on board by removing one
                 test.extend(hold)
                 el_test = evaluate_hand(test)
-                print('THIS TEST: ' + str(test))
-                print('Test eval: ' + str(el_test) + ' == ' + interpret_eval(el_test))
-
                 comp = compare_hands(el_test, el_best)
                 if comp != 0:
-                    print('Best is ' + str(el_best) + ' == ' + interpret_eval(el_best))
                     el_best = comp
         return el_best
     elif (len(h) + len(b)) == 7: # 5 cards on board (river)
-        print('making hands -- RIVER')
         for i in range(3):
-            print('     ********* at i == ' + str(i) + ' *********')
             for j in range(5):
-                print('          **** at j == ' + str(j) + ' ****')
                 test = []   # reset test hand
                 if i < 2:   # use one card in hand
                     test.append(h[i])   # one card from hand (i = 0 or 1)
                     hold = b[:]
-                    hold.pop(j)         # pop off (j = 0 to 4)
+                    hold.pop(j)         # pop off one of 5 (j = 0 to 4) on board, to select 4 remaining cards 
                     test.extend(hold)   # test hand built
                     el_test = evaluate_hand(test)
-
-                    # make comparison 
-                    print('Test: ' + str(el_test) + ' == ' + interpret_eval(el_test))
-                    print('Best: ' + str(el_best) + ' == ' + interpret_eval(el_best))
                     comp = compare_hands(el_test, el_best)
                     if comp != 0:
                         el_best = comp
-                    print('Best is ' + str(el_best) + ' == ' + interpret_eval(el_best))
                 if i == 2: 
-                    print('\nENTERING INCOMPLETE CODE SECTION')
-                    # this will cycle FIVE TIMES with j == 0 to 4 and constant i == 2
                     for k in range(5):
                         test = []
                         test.extend(h)  # use both cards in hand
                         hold1 = b[:]
                         hold2 = []
-
                         if k > j : # use j and k to select cards to pop
-                            print('ijk: ' + str(i) + ' ' + str(j) + ' ' + str(k))
+                            # i j k
+                            # where i == both from hand, and j k indicate which cards from board NOT to include
+                            # print('ijk: ' + str(i) + ' ' + str(j) + ' ' + str(k))
                             # find unwanted cards
                             for x in range(len(hold1)):
                                 if x == k or x == j:
@@ -333,29 +311,17 @@ def make_hands(H, B):
                                     hold2.append(hold1[x])
                             if len(hold2) != 3:
                                 print('ERROR CHOOSING CARDS FROM BOARD')
-
                             test.extend(hold2)
                             el_test = evaluate_hand(test)
-
-                            print('--> Popped off ' + str(j) + ' and ' + str(k) + ' from the board')
-                            print('       BOARD: ' + str(b))
-                            print('CHOSEN CARDS: ' + str(hold2))
-                            print('        HAND: ' + str(test))                        
-
-                            # make comparison 
-                            print('     Test: ' + str(el_test) + ' == ' + interpret_eval(el_test))
-                            print('     Best: ' + str(el_best) + ' == ' + interpret_eval(el_best))
                             comp = compare_hands(el_test, el_best)
                             if comp != 0:
                                 el_best = comp
-                            print('Best is ' + str(el_best) + ' == ' + interpret_eval(el_best))
                         else:
                             pass
         return el_best            
     else:
         print('ERROR B:  Incorrect input.')
         return -1
-
 
 # Expand using inheritance to add different player archetypes
 class Player:
@@ -401,8 +367,6 @@ p1 = Player('Calvin', starting_stack, 0)
 p2 = Player('Ian', starting_stack, 1)
 p3 = Player('Beattie', starting_stack, 2)
 players = [p1, p2, p3]
-
-
 
 # Deal a hand
 # figure out how to break this into loopable steps
