@@ -5,7 +5,7 @@
 ### In Progress
 * Make game loopable
 * Add betting
-    * basic
+    * Basic
     * Extend Player class with archetypes and rulesets for betting actions
 * Add statistic tracking
 ### Complete
