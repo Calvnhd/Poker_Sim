@@ -372,7 +372,9 @@ def find_best_hand(hands):
 
 done = False
 end = False
+c = 0
 while not done:
+    c += 1
     print("\n ===== Welcome to Calvin's Poker Simulator! =====")
 
     player_count = 3
@@ -492,7 +494,7 @@ while not done:
     
     done = end
     
-
+print('\n *** Played ' + str(c) + ' rounds ***')
 
 # for testing hand
 # eval = -1
