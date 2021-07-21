@@ -8,6 +8,7 @@
     * Basic
     * Extend Player class with archetypes and rulesets for betting actions
 * Add statistic tracking
+* Extend make_hands() to include playing the board
 ### Complete
 * Deck builder and dealing hands
 * Analysing a 5 card hand
