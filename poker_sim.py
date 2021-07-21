@@ -293,8 +293,65 @@ def make_hands(H, B):
         return el_best
     elif (len(h) + len(b)) == 7: # 5 cards on board (river)
         print('making hands -- RIVER')
-        for i in range(7):
-            test = []
+        for i in range(3):
+            print('     ********* at i == ' + str(i) + ' *********')
+            for j in range(5):
+                print('          **** at j == ' + str(j) + ' ****')
+                test = []   # reset test hand
+                if i < 2:   # use one card in hand
+                    test.append(h[i])   # one card from hand (i = 0 or 1)
+                    hold = b[:]
+                    hold.pop(j)         # pop off (j = 0 to 4)
+                    test.extend(hold)   # test hand built
+                    el_test = evaluate_hand(test)
+
+                    # make comparison 
+                    print('Test: ' + str(el_test) + ' == ' + interpret_eval(el_test))
+                    print('Best: ' + str(el_best) + ' == ' + interpret_eval(el_best))
+                    comp = compare_hands(el_test, el_best)
+                    if comp != 0:
+                        el_best = comp
+                    print('Best is ' + str(el_best) + ' == ' + interpret_eval(el_best))
+                if i == 2: 
+                    print('\nENTERING INCOMPLETE CODE SECTION')
+                    # this will cycle FIVE TIMES with j == 0 to 4 and constant i == 2
+                    for k in range(5):
+                        test = []
+                        test.extend(h)  # use both cards in hand
+                        hold1 = b[:]
+                        hold2 = []
+
+                        if k > j : # use j and k to select cards to pop
+                            print('ijk: ' + str(i) + ' ' + str(j) + ' ' + str(k))
+                            # find unwanted cards
+                            for x in range(len(hold1)):
+                                if x == k or x == j:
+                                    hold1[x] = -1
+                            # rebuild without unwanted cards
+                            for x in range(len(hold1)):
+                                if hold1[x] != -1:
+                                    hold2.append(hold1[x])
+                            if len(hold2) != 3:
+                                print('ERROR CHOOSING CARDS FROM BOARD')
+
+                            test.extend(hold2)
+                            el_test = evaluate_hand(test)
+
+                            print('--> Popped off ' + str(j) + ' and ' + str(k) + ' from the board')
+                            print('       BOARD: ' + str(b))
+                            print('CHOSEN CARDS: ' + str(hold2))
+                            print('        HAND: ' + str(test))                        
+
+                            # make comparison 
+                            print('     Test: ' + str(el_test) + ' == ' + interpret_eval(el_test))
+                            print('     Best: ' + str(el_best) + ' == ' + interpret_eval(el_best))
+                            comp = compare_hands(el_test, el_best)
+                            if comp != 0:
+                                el_best = comp
+                            print('Best is ' + str(el_best) + ' == ' + interpret_eval(el_best))
+                        else:
+                            pass
+        return el_best            
     else:
         print('ERROR B:  Incorrect input.')
         return -1
