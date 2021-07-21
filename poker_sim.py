@@ -383,13 +383,13 @@ for i in range(player_count):
 pot += players[1].bet(sb)
 pot += players[2].bet(bb)
 
+print_game_details()
+
 # Flop
 deck.take_card() #Burn
 board.append(deck.take_card())
 board.append(deck.take_card())
 board.append(deck.take_card())
-
-print_game_details()
 
 print('============')
 player_best = make_hands(p1.get_hand(), board)
