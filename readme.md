@@ -4,9 +4,10 @@
 ## Progress Notes
 ### In Progress
 * Make game loopable
-* Add betting, basic first, then extend Player class with archetypes
+* Add betting
+    * basic
+    * Extend Player class with archetypes and rulesets for betting actions
 * Add statistic tracking
-* Player archetypes and rulesets for betting actions
 ### Complete
 * Deck builder and dealing hands
 * Analysing a 5 card hand
