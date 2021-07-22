@@ -40,14 +40,13 @@ class Deck:
         card = self.deck.pop(0)
         self.removed.append(card)
         return card
-    def list_deck(self):        # Print cards (remaining) in deck
-        print(self.deck)
-    def list_removed(self):     # Print cards removed from deck
-        print(self.removed)
+    def get_deck(self):        # Cards (remaining) in deck
+        return self.deck
+    def get_removed(self):     # Cards removed from deck
+        return self.removed
     def info(self):             # Print number of cards remaining & removed
-        print('Number of cards...')
-        print('Remaining: ' + str(len(self.deck)))
-        print('Removed: ' + str(len(self.removed)))
+        info = 'Number of cards...\nRemaining: ' + str(len(self.deck)) + '\nRemoved: ' + str(len(self.removed))
+        return info
 
 # Evaluates a five card hand
 # Takes list of ranks & suits [[r,s],[r,s],[r,s],[r,s],[r,s]]
@@ -360,13 +359,13 @@ class Player:
         self.position = position
     def get_chips(self):
         return self.chips
-    def bet(self, amount):
+    def bet(self, amount):  # need to check that betting won't be more than total chips
         self.chips -= amount
         return amount
     def add_chips(self, amount):
         self.chips += amount
     def info(self):
-        return ('Name: ' + str(self.name) + '  ...  Chips: ' + str(self.chips) + '  ...  Hand: ' + str(self.hand) + '  ...  Position: ' + str(self.position) + '\n')
+        return ('Name: ' + str(self.name) + '  ...  Chips: ' + str(self.chips) + '  ...  Hand: ' + str(self.hand) + '  ...  Position: ' + str(self.position))
     def set_position(self, position):
         self.position = position
     def get_position(self):
@@ -375,29 +374,43 @@ class Player:
         self.hand.append(card)
     def get_hand(self):
         return self.hand
+    def reset_hand(self):
+        self.hand = []
     def get_name(self):
         return str(self.name)
 
 # Holds all ongoing game elements
+# Players (name, hand, chips, positions), leaders, chip_leaders, Deck, board, pot
 class Game:
     def __init__(self, names):
-        # hardcode details for now
-        self.names = names  # add check for duplicate names
-        self.player_count = len(self.names)       # change to len(names)
-        self.starting_stack = 300   # pass in ?
-        self.bb = 2                 # pass in ?
+        self.names = names  # add check for duplicate names, and min/max players
+        self.player_count = len(self.names) 
+        # initialze deck 
+        self.deck = Deck()
+        self.deck.shuffle()
+        # hardcode chips and blinds
+        self.starting_stack = 300
+        self.total_chips = int(self.starting_stack * self.player_count)
+        self.bb = 2               
         self.sb = int(self.bb/2)
+        # create players
         self.players = []
         for i in range(self.player_count):
-            self.players.append(Player(self.names[i], self.starting_stack, i))  # find a way to randomize starting dealer pos?
-            #self.players.append(self.names[i])
-        print('Game created with ' + str(self.player_count) + ' players') 
+            self.players.append(Player(self.names[i], self.starting_stack, i))  # find a way to randomize starting dealer pos
+        # additional items to track
+        self.leaders = []
+        self.chip_leaders = []
+        self.board = []
+        self.pot = 0
+        self.round = 0 # update for deal, flop ,turn, river            
     def get_players(self):
         return self.players
     def info(self):
-        info = ''
+        info = 'Pot: ' + str(self.pot) + '\n'
         for i in range(self.player_count):
             info += self.players[i].info()
+            info += '\n'
+        info += ('Board: ' + str(self.board))
         return info
     def update_positions(self):
         for i in range(self.player_count):
@@ -406,63 +419,111 @@ class Game:
             else:    
                 pos = self.players[i].get_position() + 1
                 self.players[i].set_position(pos)
+    def get_chip_leaders(self):
+        self.chip_leaders = []
+        max = 0
+        for i in range(self.player_count): # find biggest stack
+            if (self.players[i].get_chips()) >= max:
+                max = self.players[i].get_chips()
+        for i in range(self.player_count):
+            if (self.players[i].get_chips()) == max:
+                self.chip_leaders.append(self.players[i].get_name())
+        return self.chip_leaders
+    def get_leaders(self):
+        self.leaders = []
+        for i in range(self.player_count):
+            pass        
+        return self.leaders
+    def deal(self):
+        if self.round == 0 or len(self.board) >= 5:
+            # Reset for new hand
+            self.board = []
+            self.pot = 0
+            self.deck.shuffle()
+            for i in range(self.player_count):
+                self.players[i].reset_hand()
+            print('\nDealing cards to players')
+            print('Deck: ' + str(self.deck.get_deck()))
+            # Deal 2 cards to players
+            for i in range(2):
+                for j in range(self.player_count):
+                    self.players[j].give_card(self.deck.take_card())
+            # Post blinds
+            for i in range(self.player_count):
+                if self.player_count > 2:
+                    if self.players[i].get_position() == 1:
+                        self.pot += self.players[i].bet(self.sb)
+                    elif self.players[i].get_position() == 2:
+                        self.pot += self.players[i].bet(self.bb)
+                elif self.player_count == 2:
+                    pass
+                else:
+                    print('ERROR POSTING BLINDS.  ONLY ONE PLAYER.')
+            self.round += 1
+        elif self.round == 1:  # Flop
+            print('\nDealing Flop')
+            self.deck.take_card()   # Burn a card
+            for i in range(3):      # Add 3 cards to board
+                self.board.append(self.deck.take_card())
+            self.round += 1
+        elif self.round == 2:  # Turn
+            print('\nDealing Turn')
+            self.deck.take_card()                       # Burn a card
+            self.board.append(self.deck.take_card())    # Add one card to board
+            self.round += 1
+        elif self.round == 3:  # River
+            print('\nDealing River')
+            self.deck.take_card()                       # Burn a card
+            self.board.append(self.deck.take_card())    # Add one card to board
+            self.round = 0
+        else:
+            print('\nDEALING ERROR')
+    def get_deck(self):
+        return self.deck.get_deck()
+    def get_removed(self):
+        return self.deck.get_removed()
+    def get_board(self):
+        return self.board
+    def get_round(self):
+        return round
  
 
-new_Game = Game(['CD', 'IK', 'BM', 'as', 'er', 'qw', 'gf'])
-print(new_Game.info())
-new_Game.update_positions()
-print(new_Game.info())
-new_Game.update_positions()
-print(new_Game.info())
-new_Game.update_positions()
-print(new_Game.info())
-new_Game.update_positions()
-print(new_Game.info())
-new_Game.update_positions()
-print(new_Game.info())
-new_Game.update_positions()
-print(new_Game.info())
-new_Game.update_positions()
-print(new_Game.info())
-new_Game.update_positions()
-print(new_Game.info())
-new_Game.update_positions()
-print(new_Game.info())
+game = Game(['CD', 'IK', 'BM'])
+game.deal()
+print(game.info())
+game.deal()
+game.deal()
+game.deal()
+print(game.info())
+game.update_positions()
 
+game.deal()
+print(game.info())
+game.deal()
+game.deal()
+game.deal()
+print(game.info())
+game.update_positions()
 
+game.deal()
+print(game.info())
+game.deal()
+game.deal()
+game.deal()
+print(game.info())
+game.update_positions()
+
+# print(game.get_deck())
+# print(game.get_removed())
 # done = False
 # c = 0
 # while not done:
 #     c += 1
 #     print("\n ===== Welcome to Calvin's Poker Simulator! =====")
 
-#     player_count = 3
-#     starting_stack = 300
-#     bb = 2
-#     sb = int(bb /2)
-
-#     # Update this with a for loop to have a flexible number of players (3 to 8)
-#     p1 = Player('Calvin', starting_stack, 0)
-#     p2 = Player('Ian', starting_stack, 1)
-#     p3 = Player('Beattie', starting_stack, 2)
-#     players = [p1, p2, p3]
-#     leaders = []
-#     chip_leader = players[0] # make a find chip leader function
-
-#     # Deal a hand
-#     # figure out how to break this into loopable steps
-#     deck = Deck()
-#     deck.shuffle()
-#     board = []
-#     pot = 0
 #     # Deal
-#     for i in range(player_count):
-#         players[i].give_card(deck.take_card())
-#     for i in range(player_count):
-#         players[i].give_card(deck.take_card())
 
-#     pot += players[1].bet(sb)
-#     pot += players[2].bet(bb)
+
 
 #     print_game_details()
 
