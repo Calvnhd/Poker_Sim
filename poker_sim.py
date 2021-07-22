@@ -329,7 +329,7 @@ def make_hands(H, B):
         print('ERROR B:  Incorrect input.')
         return -1
 
-# Takes a list of hands, and returns the best one
+# Takes a list of evaluated hands, and returns the best one
 # Try different sorting algorithms?
 def find_best_hand(hands):
     best = hands[0]
@@ -339,15 +339,6 @@ def find_best_hand(hands):
             if comp != 0:
                 best = comp
     return best
-
-# Update to pass in variables of game for re-useability
-def print_game_details():
-    print('\n===  Player Status ===')
-    print(str(player_count) + ' Players')
-    p1.get_info()
-    p2.get_info()
-    p3.get_info()
-    print('Pot: ' + str(pot))
 
 # Expand using inheritance to add different player archetypes
 class Player:
@@ -364,7 +355,7 @@ class Player:
     def add_chips(self, amount):
         self.chips += amount
     def info(self):
-        return ('Name: ' + str(self.name) + '  ...  Chips: ' + str(self.chips) + '  ...  Hand: ' + str(self.hand) + '  ...  Position: ' + str(self.position))
+        return ('Name: ' + str(self.name) + '  ...  Chips: $' + str(self.chips) + '  ...  Hand: ' + str(self.hand) + '  ...  Position: ' + str(self.position))
     def set_position(self, position):
         self.position = position
     def get_position(self):
@@ -392,34 +383,37 @@ class Game:
         self.total_chips = int(self.starting_stack * self.player_count)
         self.bb = 2               
         self.sb = int(self.bb/2)
-        # create players
+        # create players and store in list
         self.players = []
         for i in range(self.player_count):
             self.players.append(Player(self.names[i], self.starting_stack, i))  # find a way to randomize starting dealer pos
         # additional items to track
-        self.leaders = []
-        self.chip_leaders = []
-        self.board = []
-        self.pot = 0
-        self.round = 0 # update for deal, flop ,turn, river            
-    def get_players(self):
+        self.leaders = []       # players with winning hands
+        self.hands = []         # stores best hand of players[i] as eval code
+        self.best_hand = []     # stores the best hand overall
+        self.chip_leaders = []  # players with most chips
+        self.board = []         # cards on board for a round
+        self.pot = 0            # current pot for given betting round
+        self.round = 0          # update for deal, flop ,turn, river            
+    def get_players(self): # Returns a list of the player objects
         return self.players
-    def info(self):
-        info = 'Pot: ' + str(self.pot) + '\n'
+    def info(self):  # Returns a string showing pot, players object info (name,chips,hand,pos), cards on board
+        # info = 'Pot: ' + str(self.pot) + '\n'
+        info = ''
         for i in range(self.player_count):
             info += self.players[i].info()
             info += '\n'
-        info += ('Board: ' + str(self.board))
+        info += ('Board: ' + str(self.board) + '\n')
+        info += ('Pot: $' + str(self.pot))
         return info
-    def update_positions(self):
-        print('...updating positions...')
+    def update_positions(self): # Shifts dealer button by updating pos for each player in players list
         for i in range(self.player_count):
             if self.players[i].get_position() == self.player_count - 1: # if at max pos
                 self.players[i].set_position(0)                         # set pos to 0 (dealer)
             else:    
                 pos = self.players[i].get_position() + 1
                 self.players[i].set_position(pos)
-    def get_chip_leaders(self):
+    def get_chip_leaders(self): # Returns a list of players objects with the most chips
         self.chip_leaders = []
         max = 0
         for i in range(self.player_count): # find biggest stack
@@ -429,36 +423,45 @@ class Game:
             if (self.players[i].get_chips()) == max:
                 self.chip_leaders.append(self.players[i].get_name())
         return self.chip_leaders
-    def get_leaders(self):
-        self.leaders = []
-        for i in range(self.player_count):
-            pass        
-        return self.leaders
-    def deal(self):
+    def deal(self): # the core step in the Game. Loop through to deal cards to players and post blinds, flop, river, turn.  Tracks betting rounds and acts accordingly.
         if self.pot != 0 and self.round == 0:
-            print('ERROR DEALING.  POT NOT TAKEN')
+            print('ERROR!  POT NOT TAKEN BEFORE NEXT DEAL')
             self.pot = 0
         if self.round == 0:   # Deal
+            # print('NEW DEAL')
             # Reset for new hand
             self.board = []
             self.deck.shuffle()
             for i in range(self.player_count):
                 self.players[i].reset_hand()
-            # Deal 2 cards to players
+            # Find who sits (index of players[i]) to the left of dealer (position 1)
+            seat = -1
+            i = 0
+            while (seat == -1) and (i < 30):
+                pos = self.players[i].get_position()
+                if pos == 1:
+                    seat = i
+                i += 1
+            # deal i = 2 cards to each of j players, starting from dealer's left
             for i in range(2):
                 for j in range(self.player_count):
-                    self.players[j].give_card(self.deck.take_card())
+                    if (seat + j) < self.player_count:
+                        self.players[(seat+j)].give_card(self.deck.take_card())
+                    elif (seat + j) >= self.player_count:
+                        self.players[(seat + j - self.player_count)].give_card(self.deck.take_card())
             # Post blinds
             for i in range(self.player_count):
+                if self.players[i].get_position() == 1:
+                    # print('Small blind: ' + self.players[i].get_name())
+                    self.pot += self.players[i].bet(self.sb)
                 if self.player_count > 2:
-                    if self.players[i].get_position() == 1:
-                        print('Small blind: ' + self.players[i].get_name())
-                        self.pot += self.players[i].bet(self.sb)
-                    elif self.players[i].get_position() == 2:
-                        print('Big blind: ' + self.players[i].get_name())
+                    if self.players[i].get_position() == 2:
+                        # print('Big blind: ' + self.players[i].get_name())
                         self.pot += self.players[i].bet(self.bb)
                 elif self.player_count == 2:
-                    pass
+                    if self.players[i].get_position() == 0:
+                        # print('Big blind: ' + self.players[i].get_name())
+                        self.pot += self.players[i].bet(self.bb)
                 else:
                     print('ERROR POSTING BLINDS.  ONLY ONE PLAYER.')
             self.round += 1
@@ -477,160 +480,78 @@ class Game:
             self.round = 0
         else:
             print('\nDEALING ERROR')
-    def get_deck(self):
+    def get_deck(self): # returns list of cards remaining in deck
         return self.deck.get_deck()
-    def get_removed(self):
+    def get_removed(self): # returns list of cards removed from deck 
         return self.deck.get_removed()
-    def get_board(self):
+    def get_board(self): # returns list of cards on board
         return self.board
-    def get_round(self):
+    def get_round(self): # returns int corresponding to betting round.  Increments with each deal() call from 0 (Pre-Flop) to 3 (River).
         return round
-    def award_pot(self, win):
-        chips = int(self.pot / len(win))
-        print('Awarding ' + str(chips) + ' chips to ' + str(len(win)) + ' winners')
-    def find_leaders(self):
+    def award_pot(self): # gives / splits pot to those in leaders[], matching names with players[].  Returns string with award info. Does not yet account for side pots!
+        chips = int(self.pot / len(self.get_leaders()))
+        if len(self.get_leaders()) > 1:
+            output = '$' + str(chips) + ' each to '
+        else: 
+            output = '$' + str(chips) + ' to '
+        i = (len(self.get_leaders()) - 1)
+        while i >= 0:
+            for j in range(self.player_count):
+                if self.leaders[i].get_name() == self.players[j].get_name():
+                    self.players[j].add_chips(chips)
+                    output += str(self.players[j].get_name())
+                    output += ' '
+            i -= 1
+        self.pot = 0
+        return output
+    def find_leaders(self): # creates list hands[] of best 5 card hand for each player, finds best_hand overall, and creates list leaders[] of player objects who hold the best hand 
         self.leaders = []
         if len(self.board) < 3:
-            print('ERROR! NOT ENOUGH CARDS ON BOARD')
+            print('ERROR! NOT ENOUGH CARDS ON BOARD TO MAKE HANDS')
         else: 
             # Find the best 5 card hand from each player
-            hands = []
+            self.hands = []
             for i in range(self.player_count):
-                hands.append(make_hands(self.players[i].get_hand(), self.board))
-            best_hand = find_best_hand(hands)
-            # Print results
-            for i in range(self.player_count):
-                print(str(self.players[i].get_name()) + ': ' + interpret_eval(hands[i]))
-            print('Best Hand: ' + interpret_eval(best_hand))
+                self.hands.append(make_hands(self.players[i].get_hand(), self.board))
+            self.best_hand = find_best_hand(self.hands)
             # Match player hand to best hand
             for i in range(self.player_count):
-                if best_hand == hands[i]:
+                if self.best_hand == self.hands[i]:
                     self.leaders.append(self.players[i])
-            for i in range(len(self.leaders)):
-                winner = (self.leaders[i].get_name())
-            print('found ' + str(len(self.leaders)) + ' winner(s): ' + winner)
+    def get_player_hands(self): # returns hands[] as created in find_leaders()
+        if self.player_count != len(self.hands):
+            self.find_leaders()
+        return self.hands
+    def get_leaders(self): # returns leaders[] as created in find_leaders()
+        if self.player_count != len(self.hands):
+            self.find_leaders()
+        return self.leaders
+    def hand_info(self):
+        output = ''
+        if len(self.board) >= 3:
+            if self.player_count != len(self.hands):
+                self.find_leaders()
+            for i in range(self.player_count):
+                output += (str(self.players[i].get_name()) + ': ' + interpret_eval(self.hands[i]) + '\n')
+            output += ('Best hand: ' + str(interpret_eval(self.best_hand))) 
+        else:
+            output = "ERROR! CAN'T PRINT HAND INFO PRE-FLOP"
+        return output
 
 game = Game(['CD', 'IK', 'BM'])
-for i in range(2):
+for i in range(100):
     print('====  Game ' + str(i) + ' ====')
     game.deal() # deal & blinds
-    print('...Pre-Flop... ')
-    print(game.info())
     game.deal() # flop
     game.deal() # turn
     game.deal() # river
+    game.find_leaders()
+
     print('...Results... ')
     print(game.info())
-    game.find_leaders()
-    print('')
-    # game.award_pot()
+    print(game.hand_info())
+
+    print(game.award_pot())
     game.update_positions()
 
 
-#     # Flop
-#     deck.take_card() #Burn
-#     board.append(deck.take_card())
-#     board.append(deck.take_card())
-#     board.append(deck.take_card())
-
-#     print('\nFLOP  ============')
-
-
-#     # Turn
-#     deck.take_card() #Burn
-#     board.append(deck.take_card())
-
-#     print('\nTURN  ============')
-#     p1_best = make_hands(p1.get_hand(), board)
-#     p2_best = make_hands(p2.get_hand(), board)
-#     p3_best = make_hands(p3.get_hand(), board)
-#     best_hand = find_best_hand([p1_best, p2_best, p3_best])
-#     print('board: ' + str(board))
-#     print('p1: ' + interpret_eval(p1_best))
-#     print('p2: ' + interpret_eval(p2_best))
-#     print('p3: ' + interpret_eval(p3_best))
-#     print('best hand: ' + interpret_eval(best_hand))
-
-#     leaders = []
-#     if best_hand == p1_best:
-#         leaders.append(p1)
-#     if best_hand == p2_best:
-#         leaders.append(p2)
-#     if best_hand == p3_best:
-#         leaders.append(p3)
-#     print('found ' + str(len(leaders)) + ' winners')
-#     for i in range(len(leaders)):
-#         print(leaders[i].get_name())
-
-#     # River
-#     deck.take_card() #Burn
-#     board.append(deck.take_card())
-
-#     print('\nRIVER ============')
-#     p1_best = make_hands(p1.get_hand(), board)
-#     p2_best = make_hands(p2.get_hand(), board)
-#     p3_best = make_hands(p3.get_hand(), board)
-#     el_board = evaluate_hand(board)
-#     best_hand = find_best_hand([p1_best, p2_best, p3_best, el_board])
-#     print('board: ' + str(board))
-#     print('p1: ' + interpret_eval(p1_best))
-#     print('p2: ' + interpret_eval(p2_best))
-#     print('p3: ' + interpret_eval(p3_best))
-#     print('best hand: ' + interpret_eval(best_hand))
-
-#     if best_hand == el_board:
-#         print('Playing the board.  Split pot!')
-#     else:
-#         leaders = []
-#         if best_hand == p1_best:
-#             leaders.append(p1)
-#         if best_hand == p2_best:
-#             leaders.append(p2)
-#         if best_hand == p3_best:
-#             leaders.append(p3)
-#         print('found ' + str(len(leaders)) + ' winners')
-#         for i in range(len(leaders)):
-#             print(leaders[i].get_name())
-    
-#     done = True
-    
-# print('\n *** Played ' + str(c) + ' rounds ***')
-
-# for testing hand
-# eval = -1
-# test_deck = Deck()
-# count = 0
-
-# eval_code = []
-# while eval != 100:
-#     count += 1
-#     for i in range(7):
-#         test_deck.shuffle()
-
-#     h1 = []
-#     h2 = []
-#     for i in range(5):
-#         h1.append(test_deck.take_card())
-#         h2.append(test_deck.take_card())
-
-#     e_h1 = evaluate_hand(h1)
-#     e_h2 = evaluate_hand(h2)
-
-#     print('\nh1: ' + str(h1)) 
-#     print(interpret_eval(e_h1))
-#     print('h2: ' + str(h2))
-#     print(interpret_eval(e_h2))
-
-#     comp = compare_hands(e_h1, e_h2)
-#     if comp == 0:
-#         print('These hands are equal\n')
-#     else:
-#         print('Winner: ' + interpret_eval(comp))
-    
-#     eval +=1
-
-# # print('...found after ' + str(count) + ' hands')
-
-
-# notes
-# use a dictionary for player names and positions?

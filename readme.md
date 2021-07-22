@@ -6,21 +6,23 @@
 * new -- most up to date, new features and work in progress
 * master -- latest milestone
 ### In Progress
-* ~~Extend make_hands() to include playing the board~~
-* Make rounds loopable
-    * Extend Player class with all changing info, and store players in a list to iterate through and update each round
-    * Create Game class with all info, including player list etc
 * Add betting
     * Basic
+        * only bet / call same amount aall players
+        * figure out how to deal with players being knocked out, and overall effect.  Kill the game and make a new one might be easiest??
+        * Side pots!  Keep this in mind as you're writing betting rules.  Need to deal with hard limits
     * Extend Player class with archetypes and rulesets for betting actions
+
 * Add statistic tracking
-    * bake into Game class (tbc)
+    * A class above Game() ?
+
 ### Complete
-* Deck builder and dealing hands
+* Deck() class, build deck and dealing hands
 * Analysing a 5 card hand
 * Find the best hand out of 5 to 7 cards
 * Comparing two hands, comparing multiple hands
-* Single game (not looped), no betting
+* Game() class with loopable steps, storing all game info including instances of Player and Deck objects
+
 ### Ideas to extend
 * Visualise sorting algorithms
 * Game based on influencing player emotions
