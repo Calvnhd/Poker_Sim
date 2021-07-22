@@ -234,7 +234,6 @@ def compare_hands(h1, h2, i=0):
 
 # Finds the best hand a player can make with their 2 cards
 # takes 2 cards from hand, 3 to 5 cards from board, and returns the best hand in the form of eval code
-# Does NOT return playing the board as a winning hand -- board must be compared separately with find_best_hand
 def make_hands(H, B):
     h = []
     b = []
@@ -413,6 +412,7 @@ class Game:
         info += ('Board: ' + str(self.board))
         return info
     def update_positions(self):
+        print('...updating positions...')
         for i in range(self.player_count):
             if self.players[i].get_position() == self.player_count - 1: # if at max pos
                 self.players[i].set_position(0)                         # set pos to 0 (dealer)
@@ -435,15 +435,15 @@ class Game:
             pass        
         return self.leaders
     def deal(self):
-        if self.round == 0 or len(self.board) >= 5:
+        if self.pot != 0 and self.round == 0:
+            print('ERROR DEALING.  POT NOT TAKEN')
+            self.pot = 0
+        if self.round == 0:   # Deal
             # Reset for new hand
             self.board = []
-            self.pot = 0
             self.deck.shuffle()
             for i in range(self.player_count):
                 self.players[i].reset_hand()
-            print('\nDealing cards to players')
-            print('Deck: ' + str(self.deck.get_deck()))
             # Deal 2 cards to players
             for i in range(2):
                 for j in range(self.player_count):
@@ -452,8 +452,10 @@ class Game:
             for i in range(self.player_count):
                 if self.player_count > 2:
                     if self.players[i].get_position() == 1:
+                        print('Small blind: ' + self.players[i].get_name())
                         self.pot += self.players[i].bet(self.sb)
                     elif self.players[i].get_position() == 2:
+                        print('Big blind: ' + self.players[i].get_name())
                         self.pot += self.players[i].bet(self.bb)
                 elif self.player_count == 2:
                     pass
@@ -461,18 +463,15 @@ class Game:
                     print('ERROR POSTING BLINDS.  ONLY ONE PLAYER.')
             self.round += 1
         elif self.round == 1:  # Flop
-            print('\nDealing Flop')
             self.deck.take_card()   # Burn a card
             for i in range(3):      # Add 3 cards to board
                 self.board.append(self.deck.take_card())
             self.round += 1
         elif self.round == 2:  # Turn
-            print('\nDealing Turn')
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
             self.round += 1
         elif self.round == 3:  # River
-            print('\nDealing River')
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
             self.round = 0
@@ -486,46 +485,47 @@ class Game:
         return self.board
     def get_round(self):
         return round
- 
+    def award_pot(self, win):
+        chips = int(self.pot / len(win))
+        print('Awarding ' + str(chips) + ' chips to ' + str(len(win)) + ' winners')
+    def find_leaders(self):
+        self.leaders = []
+        if len(self.board) < 3:
+            print('ERROR! NOT ENOUGH CARDS ON BOARD')
+        else: 
+            # Find the best 5 card hand from each player
+            hands = []
+            for i in range(self.player_count):
+                hands.append(make_hands(self.players[i].get_hand(), self.board))
+            best_hand = find_best_hand(hands)
+            # Print results
+            for i in range(self.player_count):
+                print(str(self.players[i].get_name()) + ': ' + interpret_eval(hands[i]))
+            print('Best Hand: ' + interpret_eval(best_hand))
+            # Match player hand to best hand
+            for i in range(self.player_count):
+                if best_hand == hands[i]:
+                    self.leaders.append(self.players[i])
+            for i in range(len(self.leaders)):
+                winner = (self.leaders[i].get_name())
+            print('found ' + str(len(self.leaders)) + ' winner(s): ' + winner)
 
 game = Game(['CD', 'IK', 'BM'])
-game.deal()
-print(game.info())
-game.deal()
-game.deal()
-game.deal()
-print(game.info())
-game.update_positions()
+for i in range(2):
+    print('====  Game ' + str(i) + ' ====')
+    game.deal() # deal & blinds
+    print('...Pre-Flop... ')
+    print(game.info())
+    game.deal() # flop
+    game.deal() # turn
+    game.deal() # river
+    print('...Results... ')
+    print(game.info())
+    game.find_leaders()
+    print('')
+    # game.award_pot()
+    game.update_positions()
 
-game.deal()
-print(game.info())
-game.deal()
-game.deal()
-game.deal()
-print(game.info())
-game.update_positions()
-
-game.deal()
-print(game.info())
-game.deal()
-game.deal()
-game.deal()
-print(game.info())
-game.update_positions()
-
-# print(game.get_deck())
-# print(game.get_removed())
-# done = False
-# c = 0
-# while not done:
-#     c += 1
-#     print("\n ===== Welcome to Calvin's Poker Simulator! =====")
-
-#     # Deal
-
-
-
-#     print_game_details()
 
 #     # Flop
 #     deck.take_card() #Burn
@@ -534,26 +534,7 @@ game.update_positions()
 #     board.append(deck.take_card())
 
 #     print('\nFLOP  ============')
-#     p1_best = make_hands(p1.get_hand(), board)
-#     p2_best = make_hands(p2.get_hand(), board)
-#     p3_best = make_hands(p3.get_hand(), board)
-#     best_hand = find_best_hand([p1_best, p2_best, p3_best])
-#     print('board: ' + str(board))
-#     print('p1: ' + interpret_eval(p1_best))
-#     print('p2: ' + interpret_eval(p2_best))
-#     print('p3: ' + interpret_eval(p3_best))
-#     print('best hand: ' + interpret_eval(best_hand))
 
-#     leaders = []
-#     if best_hand == p1_best:
-#         leaders.append(p1)
-#     if best_hand == p2_best:
-#         leaders.append(p2)
-#     if best_hand == p3_best:
-#         leaders.append(p3)
-#     print('found ' + str(len(leaders)) + ' winners')
-#     for i in range(len(leaders)):
-#         print(leaders[i].get_name())
 
 #     # Turn
 #     deck.take_card() #Burn
