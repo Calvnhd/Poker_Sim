@@ -6,7 +6,7 @@
 * new -- most up to date, new features and work in progress
 * master -- latest milestone
 ### In Progress
-* Extend make_hands() to include playing the board
+* ~~Extend make_hands() to include playing the board~~
 * Make rounds loopable
     * Extend Player class with all changing info, and store players in a list to iterate through and update each round
     * Create Game class with all info, including player list etc
