@@ -340,6 +340,86 @@ def find_best_hand(hands):
                 best = comp
     return best
 
+# Determines the value of a starting 2 card hand [[r,s][r,s]]
+# Returns a rating from 0 (worst) to 15 (best)
+def start_hand_value(h):
+    pockets = False
+    suited = False
+    connectors = False
+    straight_range = False
+    both_high = False
+    one_high = False
+
+    r1 = h[0][0]
+    r2 = h[1][0]
+    s1 = h[0][1] 
+    s2 = h[1][1]
+
+    message = ''
+    if s1 == s2:
+        message += 'SUITED '
+        suited = True
+    if r1 == r2:
+        pockets = True
+        message += 'POCKETS '
+    elif abs(r1 - r2) == 1:
+        message += 'CONNECTORS '
+        connectors = True
+    elif abs(r1 - r2) <= 4:
+        message += 'STRAIGHT RANGE '
+        straight_range = True
+    if r1 > 9 or r2 > 9:
+        message += 'ONE HIGH '
+        one_high = True
+    if r1 > 9 and r2 > 9:
+        message += 'BOTH HIGH '
+        both_high = True
+    if (r1 == 14 or r2 == 14) and (r1 <= 5 or r2 <= 5):
+        message += 'STRAIGHT RANGE '
+        straight_range = True
+
+    print(message)
+
+    if both_high:
+        if pockets:
+            return 15
+        if suited:
+            if connectors:
+                return 14
+            if straight_range:
+                return 13
+        if connectors:
+            return 12
+        if straight_range: # Always true for cards both_high (>=10)
+            return 11
+        else:
+            return 10 # not currently possible.  Leave in case 'high' threshold lowers below 10.
+    elif one_high:
+        if suited:
+            if connectors: # 9 10 suited only (Rare)
+                return 9
+            if straight_range:
+                return 8
+        if connectors:
+            return 7
+        if straight_range:
+            return 6
+        else:
+            return 3
+    else: 
+        if suited:
+            if connectors:
+                return 5
+            if straight_range: 
+                return 4
+        if connectors:
+            return 2
+        if straight_range:
+            return 1
+        else: 
+            return 0
+
+
 # Expand using inheritance to add different player archetypes
 class Player:
     def __init__(self, name, chips, position):
@@ -347,6 +427,8 @@ class Player:
         self.chips = chips
         self.hand = []
         self.position = position
+        self.best_hand = []
+        self.active = True
     def get_chips(self):
         return self.chips
     def bet(self, amount):  # need to check that betting won't be more than total chips
@@ -368,6 +450,47 @@ class Player:
         self.hand = []
     def get_name(self):
         return str(self.name)
+    def get_best_hand(self):
+        if self.best_hand == []:
+            print('ERROR!  Best hand not set for player name ' + str(self.name))
+        return self.best_hand
+    def set_best_hand(self, h):
+        self.best_hand = h
+    def action(self, round, pot, bb, current_bet, prev_raise): # Decide whether to bet/raise or call (return int amount), or check/fold (return 0)
+        # Expand this decision tree for different player archetypes!
+        # Simple rules...
+            # Pre Flop  -- fold: cards >4 ranks apart & unsuited
+            #              call: anything else (2x bb)
+            #              bet:  pockets (4x bb, never fold), both cards >= 10 (2x bb, never fold), suited connectors (2x bb),
+            #     Flop  -- fold: anything worse than ace high
+            #              call: 
+            #              bet:  
+            #     Turn  -- fold: cards >4 ranks apart, unsuited
+            #              call: 
+            #              bet:  
+            #    River  -- fold: cards >4 ranks apart, unsuited
+            #              call: 
+            #              bet:  
+        call = current_bet
+        min_bet = current_bet + prev_raise
+        a = 0
+        if self.active == False:
+            pass
+        else: 
+            if round == 0: # Pre-Flop
+                if current_bet:
+                    pass
+            elif round == 1: # Flop
+                pass
+            elif round == 2: # Turn
+                pass
+            elif round == 3: # River
+                pass
+        return a
+    def set_active(self, a):
+        self.active = a
+
+
 
 # Holds all ongoing game elements
 # Players (name, hand, chips, positions), leaders, chip_leaders, Deck, board, pot
@@ -434,6 +557,7 @@ class Game:
             self.deck.shuffle()
             for i in range(self.player_count):
                 self.players[i].reset_hand()
+                self.players[i].set_active(True)
             # Find who sits (index of players[i]) to the left of dealer (position 1)
             seat = -1
             i = 0
@@ -464,19 +588,23 @@ class Game:
                         self.pot += self.players[i].bet(self.bb)
                 else:
                     print('ERROR POSTING BLINDS.  ONLY ONE PLAYER.')
+            #### PLAYER BETTING DECISIONS GOES HERE ####
             self.round += 1
         elif self.round == 1:  # Flop
             self.deck.take_card()   # Burn a card
             for i in range(3):      # Add 3 cards to board
                 self.board.append(self.deck.take_card())
+            #### PLAYER BETTING DECISIONS GOES HERE ####
             self.round += 1
         elif self.round == 2:  # Turn
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
+            #### PLAYER BETTING DECISIONS GOES HERE ####
             self.round += 1
         elif self.round == 3:  # River
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
+            #### PLAYER BETTING DECISIONS GOES HERE ####
             self.round = 0
         else:
             print('\nDEALING ERROR')
@@ -504,7 +632,7 @@ class Game:
             i -= 1
         self.pot = 0
         return output
-    def find_leaders(self): # creates list hands[] of best 5 card hand for each player, finds best_hand overall, and creates list leaders[] of player objects who hold the best hand 
+    def find_leaders(self): # creates list hands[] of best 5 card hand (in eval code) for each player, sets best_hand for player object, finds best_hand overall, and creates list leaders[] of player objects who hold the best hand 
         self.leaders = []
         if len(self.board) < 3:
             print('ERROR! NOT ENOUGH CARDS ON BOARD TO MAKE HANDS')
@@ -513,10 +641,11 @@ class Game:
             self.hands = []
             for i in range(self.player_count):
                 self.hands.append(make_hands(self.players[i].get_hand(), self.board))
+                self.players[i].set_best_hand(self.hands[i])
             self.best_hand = find_best_hand(self.hands)
             # Match player hand to best hand
             for i in range(self.player_count):
-                if self.best_hand == self.hands[i]:
+                if self.best_hand == self.players[i].get_best_hand():
                     self.leaders.append(self.players[i])
     def get_player_hands(self): # returns hands[] as created in find_leaders()
         if self.player_count != len(self.hands):
@@ -532,26 +661,50 @@ class Game:
             if self.player_count != len(self.hands):
                 self.find_leaders()
             for i in range(self.player_count):
-                output += (str(self.players[i].get_name()) + ': ' + interpret_eval(self.hands[i]) + '\n')
+                output += (str(self.players[i].get_name()) + ': ' + interpret_eval(self.players[i].get_best_hand()) + '\n')
             output += ('Best hand: ' + str(interpret_eval(self.best_hand))) 
         else:
             output = "ERROR! CAN'T PRINT HAND INFO PRE-FLOP"
         return output
 
-game = Game(['CD', 'IK', 'BM'])
-for i in range(100):
-    print('====  Game ' + str(i) + ' ====')
-    game.deal() # deal & blinds
-    game.deal() # flop
-    game.deal() # turn
-    game.deal() # river
-    game.find_leaders()
+# game = Game(['CD', 'IK', 'BM'])
+# for i in range(100):
+#     print('====  Game ' + str(i) + ' ====')
+#     game.deal() # deal & blinds
+#     game.deal() # flop
+#     game.deal() # turn
+#     game.deal() # river
+#     game.find_leaders()
 
-    print('...Results... ')
-    print(game.info())
-    print(game.hand_info())
+#     print('...Results... ')
+#     print(game.info())
+#     print(game.hand_info())
 
-    print(game.award_pot())
-    game.update_positions()
+#     print(game.award_pot())
+#     game.update_positions()
 
-
+# Testing 2 card hand eval
+len_check = 0
+t_deck = Deck()
+vals = []
+j = 0
+while len_check != 15 and j < 100000:
+    t_deck.shuffle()
+    h = []
+    # h = [[[7,'S'],[3,'D']],[[8,'S'],[4,'S']]]
+    for i in range(0,t_deck.get_size(),2):
+        x = []
+        x.append(t_deck.take_card())
+        x.append(t_deck.take_card())
+        h.append(x)
+    for i in range(len(h)):
+        v = start_hand_value(h[i])
+        vals.append(v)
+        print(str(h[i]) + ' --- ' + str(v))
+    len_check = len(set(vals))
+    j += 1
+print('i: ' + str(j))
+print(vals)
+print('looked at ' + str(len(vals)) + ' pairs of cards')
+print(set(vals))
+print(len(set(vals)))
