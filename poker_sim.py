@@ -355,30 +355,30 @@ def start_hand_value(h):
     s1 = h[0][1] 
     s2 = h[1][1]
 
-    message = ''
+    msg = ''
     if s1 == s2:
-        message += 'SUITED '
+        msg += 'SUITED '
         suited = True
     if r1 == r2:
         pockets = True
-        message += 'POCKETS '
+        msg += 'POCKETS '
     elif abs(r1 - r2) == 1:
-        message += 'CONNECTORS '
+        msg += 'CONNECTORS '
         connectors = True
     elif abs(r1 - r2) <= 4:
-        message += 'STRAIGHT RANGE '
+        msg += 'STRAIGHT RANGE '
         straight_range = True
     if r1 > 9 or r2 > 9:
-        message += 'ONE HIGH '
+        msg += 'ONE HIGH '
         one_high = True
     if r1 > 9 and r2 > 9:
-        message += 'BOTH HIGH '
+        msg += 'BOTH HIGH '
         both_high = True
     if (r1 == 14 or r2 == 14) and (r1 <= 5 or r2 <= 5):
-        message += 'STRAIGHT RANGE '
+        msg += 'STRAIGHT RANGE '
         straight_range = True
 
-    print(message)
+    print(msg)
 
     if both_high:
         if pockets:
@@ -489,6 +489,94 @@ class Player:
         return a
     def set_active(self, a):
         self.active = a
+    def find_best_hand(self, board):
+        self.best_hand = make_hands(self.hand, board)
+    def count_outs(self, board, round):
+        self.find_best_hand(board)
+        outs = [0,0]
+        print(self.best_hand)
+        if round == 0: # Pre-Flop
+            print('ERROR: Still Pre-Flop')
+        elif round == 1: # Flop
+            if self.best_hand[0] == 0:
+                print('High card outs at Flop... ')
+            if self.best_hand[0] == 1:
+                print('Pair outs at Flop... ')
+            if self.best_hand[0] == 2:
+                print('2 Pair outs at Flop... ')
+            if self.best_hand[0] == 3:
+                print('Trips outs at Flop... ')
+            if self.best_hand[0] == 4:
+                print('Straight outs at Flop... ')
+            if self.best_hand[0] == 5:
+                print('Flush outs at Flop... ')
+            if self.best_hand[0] == 6:
+                print('Full House outs at Flop... ')
+            if self.best_hand[0] == 7:
+                print('Quads at Flop... ')
+            if self.best_hand[0] == 8:
+                print('Straight Flush at Flop... ')
+            if self.best_hand[0] == 9:
+                print('Royal Flush at Flop... ')
+
+        elif round == 2: # Turn
+            if self.best_hand[0] == 0:
+                pass
+            if self.best_hand[0] == 0:
+                pass
+            if self.best_hand[0] == 1:
+                pass
+            if self.best_hand[0] == 2:
+                pass
+            if self.best_hand[0] == 3:
+                pass
+            if self.best_hand[0] == 4:
+                pass
+            if self.best_hand[0] == 5:
+                pass
+            if self.best_hand[0] == 6:
+                pass
+            if self.best_hand[0] == 7:
+                pass
+            if self.best_hand[0] == 8:
+                pass
+            if self.best_hand[0] == 9:
+                pass
+        elif round == 3: # River
+            print('This is as good as it gets.')
+# perhaps return a list [h,o]
+# where h = the best hand you can improve to, and h the number of outs to improve anything at all
+# Flop
+   #  Straight Draw?
+        # 4 in a row (+8) or single gap (+4)
+    #   Flush Draw?
+        # Count four of the same suit (+9)
+# High Card
+#     +6 to make pairs
+#       + SD FD
+# Pair
+#      +2 to make trips
+#      +3 to get two pair
+#       + SD FD
+# 2 Pair
+#   +4 to full house
+#       +SD? +FD
+#   
+# Trips
+# + 1 to quads  
+# +SD? +FD       
+# straight
+#  +FD
+# flush
+#   +SD
+# full house
+#   +1
+# quads
+# straight flush
+
+        # print(msg)
+        print('OUTS FOUND: ' + str(outs))
+        return outs
 
 
 
@@ -589,22 +677,45 @@ class Game:
                 else:
                     print('ERROR POSTING BLINDS.  ONLY ONE PLAYER.')
             #### PLAYER BETTING DECISIONS GOES HERE ####
+            #### Testing outs calculations
+
+
+            #############################################
             self.round += 1
         elif self.round == 1:  # Flop
             self.deck.take_card()   # Burn a card
             for i in range(3):      # Add 3 cards to board
                 self.board.append(self.deck.take_card())
+
             #### PLAYER BETTING DECISIONS GOES HERE ####
+            #### Testing outs calculations
+            print('flop odds!')
+            p1 = self.players[0]
+            p1.count_outs(self.board, self.round)
+
+
+            #############################################
             self.round += 1
         elif self.round == 2:  # Turn
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
             #### PLAYER BETTING DECISIONS GOES HERE ####
+            #### Testing outs calculations
+            # p1.count_outs(self.board, self.round)
+
+
+            ############################################# 
             self.round += 1
         elif self.round == 3:  # River
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
             #### PLAYER BETTING DECISIONS GOES HERE ####
+            #### Testing outs calculations
+
+
+            ############################################# 
+
+
             self.round = 0
         else:
             print('\nDEALING ERROR')
@@ -615,7 +726,7 @@ class Game:
     def get_board(self): # returns list of cards on board
         return self.board
     def get_round(self): # returns int corresponding to betting round.  Increments with each deal() call from 0 (Pre-Flop) to 3 (River).
-        return round
+        return self.round
     def award_pot(self): # gives / splits pot to those in leaders[], matching names with players[].  Returns string with award info. Does not yet account for side pots!
         chips = int(self.pot / len(self.get_leaders()))
         if len(self.get_leaders()) > 1:
@@ -638,6 +749,7 @@ class Game:
             print('ERROR! NOT ENOUGH CARDS ON BOARD TO MAKE HANDS')
         else: 
             # Find the best 5 card hand from each player
+            # PLayer objects could do this part??
             self.hands = []
             for i in range(self.player_count):
                 self.hands.append(make_hands(self.players[i].get_hand(), self.board))
@@ -667,6 +779,26 @@ class Game:
             output = "ERROR! CAN'T PRINT HAND INFO PRE-FLOP"
         return output
 
+game = Game(['CD', 'IK', 'BM'])
+for i in range(1):
+    print('====  Game ' + str(i) + ' ====')
+    print('...Dealing... ')
+    game.deal() # deal & blinds
+    print('...Flop... ')
+    game.deal() # flop
+
+    # print(game.info())
+    # print(game.hand_info())
+
+    game.deal() # turn
+    game.deal() # river
+    # game.find_leaders()
+
+
+    # print(game.award_pot())
+    # game.update_positions()
+
+
 # game = Game(['CD', 'IK', 'BM'])
 # for i in range(100):
 #     print('====  Game ' + str(i) + ' ====')
@@ -683,28 +815,28 @@ class Game:
 #     print(game.award_pot())
 #     game.update_positions()
 
-# Testing 2 card hand eval
-len_check = 0
-t_deck = Deck()
-vals = []
-j = 0
-while len_check != 15 and j < 100000:
-    t_deck.shuffle()
-    h = []
-    # h = [[[7,'S'],[3,'D']],[[8,'S'],[4,'S']]]
-    for i in range(0,t_deck.get_size(),2):
-        x = []
-        x.append(t_deck.take_card())
-        x.append(t_deck.take_card())
-        h.append(x)
-    for i in range(len(h)):
-        v = start_hand_value(h[i])
-        vals.append(v)
-        print(str(h[i]) + ' --- ' + str(v))
-    len_check = len(set(vals))
-    j += 1
-print('i: ' + str(j))
-print(vals)
-print('looked at ' + str(len(vals)) + ' pairs of cards')
-print(set(vals))
-print(len(set(vals)))
+# # Testing 2 card hand eval
+# len_check = 0
+# t_deck = Deck()
+# vals = []
+# j = 0
+# while len_check != 15 and j < 100000:
+#     t_deck.shuffle()
+#     h = []
+#     # h = [[[7,'S'],[3,'D']],[[8,'S'],[4,'S']]]
+#     for i in range(0,t_deck.get_size(),2):
+#         x = []
+#         x.append(t_deck.take_card())
+#         x.append(t_deck.take_card())
+#         h.append(x)
+#     for i in range(len(h)):
+#         v = start_hand_value(h[i])
+#         vals.append(v)
+#         print(str(h[i]) + ' --- ' + str(v))
+#     len_check = len(set(vals))
+#     j += 1
+# print('i: ' + str(j))
+# print(vals)
+# print('looked at ' + str(len(vals)) + ' pairs of cards')
+# print(set(vals))
+# print(len(set(vals)))
