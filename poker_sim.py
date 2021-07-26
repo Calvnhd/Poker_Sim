@@ -419,6 +419,42 @@ def start_hand_value(h):
         else: 
             return 0
 
+# update to look at 5 card board alone?
+def is_f_draw(H,B): # returns bool for flush draw
+    h = []
+    b = []
+    # Ensure correct inputs
+    if len(H) == 2 and len(B) > len(H):
+        h = H[:]
+        b = B[:]
+    elif len(B) == 2 and len(H) > len(B): 
+        h = B[:]
+        b = H[:]
+    else:
+        print('ERROR:  Incorrect input.')
+        return -1
+    return False
+
+# update to look at 5 card board alone?
+def is_s_draw(H,B): # returns bool for [True = draw, True = open]
+    h = []
+    b = []
+    # Ensure correct inputs
+    if len(H) == 2 and len(B) > len(H):
+        h = H[:]
+        b = B[:]
+    elif len(B) == 2 and len(H) > len(B): 
+        h = B[:]
+        b = H[:]
+    else:
+        print('ERROR:  Incorrect input.')
+        return -1
+    return [False, False]
+
+
+def find_board_outs(b):
+    pass
+
 
 # Expand using inheritance to add different player archetypes
 class Player:
@@ -491,61 +527,74 @@ class Player:
         self.active = a
     def find_best_hand(self, board):
         self.best_hand = make_hands(self.hand, board)
+
+    # returns list [hit,outs]
+    # hit: best case hand improvement, outs: total number of cards that will improve hand
+    # Needs rechecking.  Pull outs from deck and count to avoid duplicates?
     def count_outs(self, board, round):
         self.find_best_hand(board)
-        outs = [0,0]
-        print(self.best_hand)
+        print(str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand)))
+        outs = 0 # number of outs -- cards that meaningfully improve your hand
+        hit = self.best_hand[0] # best case scenario hand improvement.  Current best as baseline
+        s_draw = is_s_draw(self.hand, board)
+        f_draw = is_f_draw(self.hand, board)
+        print('s_draw: ' + str(s_draw))
+        print('f_draw: ' + str(f_draw))
         if round == 0: # Pre-Flop
             print('ERROR: Still Pre-Flop')
-        elif round == 1: # Flop
-            if self.best_hand[0] == 0:
-                print('High card outs at Flop... ')
-            if self.best_hand[0] == 1:
-                print('Pair outs at Flop... ')
-            if self.best_hand[0] == 2:
-                print('2 Pair outs at Flop... ')
-            if self.best_hand[0] == 3:
-                print('Trips outs at Flop... ')
-            if self.best_hand[0] == 4:
-                print('Straight outs at Flop... ')
-            if self.best_hand[0] == 5:
-                print('Flush outs at Flop... ')
-            if self.best_hand[0] == 6:
-                print('Full House outs at Flop... ')
-            if self.best_hand[0] == 7:
-                print('Quads at Flop... ')
-            if self.best_hand[0] == 8:
-                print('Straight Flush at Flop... ')
-            if self.best_hand[0] == 9:
-                print('Royal Flush at Flop... ')
-
-        elif round == 2: # Turn
-            if self.best_hand[0] == 0:
-                pass
-            if self.best_hand[0] == 0:
-                pass
-            if self.best_hand[0] == 1:
-                pass
-            if self.best_hand[0] == 2:
-                pass
-            if self.best_hand[0] == 3:
-                pass
-            if self.best_hand[0] == 4:
-                pass
-            if self.best_hand[0] == 5:
-                pass
-            if self.best_hand[0] == 6:
-                pass
-            if self.best_hand[0] == 7:
-                pass
-            if self.best_hand[0] == 8:
-                pass
-            if self.best_hand[0] == 9:
-                pass
+        elif round == 1 or round == 2: # Flop
+            if round == 1:
+                print('Flop outs...')
+            else:
+                print('Turn outs...')
+            if hit == 0: # High card
+                outs += 6 # to hit pair
+                if s_draw[0] == True:
+                    if s_draw[1] == True: # Open draw
+                        outs += 8
+                    else:
+                        outs += 4 
+                    hit = 4 # straight
+                else:
+                    hit = 1 # pair
+                if f_draw == True:
+                    outs += 9 # to hit flush
+                    hit = 5 # flush
+            elif hit == 1: # Pair
+                outs += 2 # to hit trips
+                outs += 3 # to hit 2 pair
+                if f_draw == True:
+                    outs += 9 # to hit flush
+                    hit = 5 # flush
+                else:
+                    hit = 3 # trips
+            elif hit == 2: # Two Pair
+                outs += 4 # to hit Full House
+                hit = 6
+            elif hit == 3: # Trips
+                outs += 1 # to hit quads
+                outs += 6 # to hit Full House
+                hit = 7   # quads
+            # hit update for 4 and 5 doesn't consider possibility of hitting RF.  Rare enough to not matter (probably).
+            elif hit == 4: # Straight
+                if f_draw == True:
+                    outs += 1 # to hit straight flush
+                    hit = 8     
+            elif hit == 5: # Flush
+                if s_draw[0] == True:
+                    if s_draw[1] == True: # open draw
+                        outs += 2 # to hit straight flush
+                    else:
+                        outs += 1 # to hit straight flush
+                    hit = 8 
+            elif hit == 6: # Full House
+                outs += 1 # to hit quads
+                hit = 7
+            # no improvement possible for hit > 6 (Quads / SF / RF)
         elif round == 3: # River
-            print('This is as good as it gets.')
-# perhaps return a list [h,o]
-# where h = the best hand you can improve to, and h the number of outs to improve anything at all
+            print('All cards dealt. This is as good as it gets.')
+            hit = self.best_hand[0]
+
 # Flop
    #  Straight Draw?
         # 4 in a row (+8) or single gap (+4)
@@ -575,8 +624,9 @@ class Player:
 # straight flush
 
         # print(msg)
-        print('OUTS FOUND: ' + str(outs))
-        return outs
+        print('Can improve to: ' + str(hit) + ', outs found: ' + str(outs))
+        print('returning: ' + str([hit, outs]))
+        return [hit, outs]
 
 
 
@@ -624,6 +674,13 @@ class Game:
             else:    
                 pos = self.players[i].get_position() + 1
                 self.players[i].set_position(pos)
+    def update_round(self): # increments round, or returns to zero for new deal
+        if self.round == 3:
+            self.round = 0
+        else:
+            self.round += 1
+        return self.round
+
     def get_chip_leaders(self): # Returns a list of players objects with the most chips
         self.chip_leaders = []
         max = 0
@@ -676,56 +733,30 @@ class Game:
                         self.pot += self.players[i].bet(self.bb)
                 else:
                     print('ERROR POSTING BLINDS.  ONLY ONE PLAYER.')
-            #### PLAYER BETTING DECISIONS GOES HERE ####
-            #### Testing outs calculations
 
-
-            #############################################
-            self.round += 1
         elif self.round == 1:  # Flop
             self.deck.take_card()   # Burn a card
             for i in range(3):      # Add 3 cards to board
                 self.board.append(self.deck.take_card())
 
-            #### PLAYER BETTING DECISIONS GOES HERE ####
-            #### Testing outs calculations
-            print('flop odds!')
-            p1 = self.players[0]
-            p1.count_outs(self.board, self.round)
-
-
-            #############################################
-            self.round += 1
         elif self.round == 2:  # Turn
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
-            #### PLAYER BETTING DECISIONS GOES HERE ####
-            #### Testing outs calculations
-            # p1.count_outs(self.board, self.round)
 
-
-            ############################################# 
-            self.round += 1
         elif self.round == 3:  # River
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
-            #### PLAYER BETTING DECISIONS GOES HERE ####
-            #### Testing outs calculations
 
-
-            ############################################# 
-
-
-            self.round = 0
         else:
-            print('\nDEALING ERROR')
+            print('\nDEALING ERROR.  Rounds not set')
+
     def get_deck(self): # returns list of cards remaining in deck
         return self.deck.get_deck()
     def get_removed(self): # returns list of cards removed from deck 
         return self.deck.get_removed()
     def get_board(self): # returns list of cards on board
         return self.board
-    def get_round(self): # returns int corresponding to betting round.  Increments with each deal() call from 0 (Pre-Flop) to 3 (River).
+    def get_round(self): # returns int from 0 (Pre-Flop) to 3 (River) corresponding to betting round. Increment with update_round()
         return self.round
     def award_pot(self): # gives / splits pot to those in leaders[], matching names with players[].  Returns string with award info. Does not yet account for side pots!
         chips = int(self.pot / len(self.get_leaders()))
@@ -780,18 +811,26 @@ class Game:
         return output
 
 game = Game(['CD', 'IK', 'BM'])
+p1 = game.players[0]
+
 for i in range(1):
     print('====  Game ' + str(i) + ' ====')
     print('...Dealing... ')
     game.deal() # deal & blinds
-    print('...Flop... ')
+    game.update_round()
     game.deal() # flop
+    print(game.info())
+    #### Testing outs calculations
+    print('flop odds...')
+    p1.count_outs(game.get_board(), game.get_round())
 
-    # print(game.info())
+
+    #############################################
+
     # print(game.hand_info())
 
-    game.deal() # turn
-    game.deal() # river
+    # game.deal() # turn
+    # game.deal() # river
     # game.find_leaders()
 
 
