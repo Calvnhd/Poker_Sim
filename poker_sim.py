@@ -419,21 +419,36 @@ def start_hand_value(h):
         else: 
             return 0
 
-# update to look at 5 card board alone?
-def is_f_draw(H,B): # returns bool for flush draw
-    h = []
-    b = []
-    # Ensure correct inputs
-    if len(H) == 2 and len(B) > len(H):
-        h = H[:]
-        b = B[:]
-    elif len(B) == 2 and len(H) > len(B): 
-        h = B[:]
-        b = H[:]
+# returns bool for flush draw
+# input hand[] and/or board[], combined total of 4 to 6 cards
+def is_f_draw(h,b=[]): 
+    print('h: ' + str(h))
+    print('b: ' + str(b))
+    seen = h[:]
+    seen.extend(b)
+    f_draw = False
+
+    print('\nSearching for Flush draw in ' + str(seen) + ' length ' + str(len(seen)))
+    if len(seen) > 3 and len(seen) < 7:
+        # extract suits
+        suits = []
+        for i in range(len(seen)):
+            suits.append(seen[i][1])
+        s = list(set(suits))
+
+        for i in range(len(s)):
+            count = 0
+            for j in range(len(suits)):
+                if s[i] == suits[j]:
+                    count += 1
+            if count == 4:
+                print('Found Flush draw')
+                f_draw = True
+
     else:
-        print('ERROR:  Incorrect input.')
-        return -1
-    return False
+        print('ERROR: Too many cards to calculate Flush draw') 
+
+    return f_draw
 
 # update to look at 5 card board alone?
 def is_s_draw(H,B): # returns bool for [True = draw, True = open]
@@ -528,14 +543,14 @@ class Player:
     def find_best_hand(self, board):
         self.best_hand = make_hands(self.hand, board)
 
-    # returns list [hit,outs]
-    # hit: best case hand improvement, outs: total number of cards that will improve hand
+    # returns list [goal,outs]
+    # goal: best case hand improvement, outs: number of cards (chances) to hit goal
     # Needs rechecking.  Pull outs from deck and count to avoid duplicates?
     def count_outs(self, board, round):
         self.find_best_hand(board)
         print(str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand)))
-        outs = 0 # number of outs -- cards that meaningfully improve your hand
-        hit = self.best_hand[0] # best case scenario hand improvement.  Current best as baseline
+        outs = 0 
+        goal = 0 
         s_draw = is_s_draw(self.hand, board)
         f_draw = is_f_draw(self.hand, board)
         print('s_draw: ' + str(s_draw))
@@ -544,89 +559,60 @@ class Player:
             print('ERROR: Still Pre-Flop')
         elif round == 1 or round == 2: # Flop
             if round == 1:
-                print('Flop outs...')
+                print('...   Flop outs   ...')
             else:
-                print('Turn outs...')
-            if hit == 0: # High card
-                outs += 6 # to hit pair
-                if s_draw[0] == True:
-                    if s_draw[1] == True: # Open draw
-                        outs += 8
-                    else:
-                        outs += 4 
-                    hit = 4 # straight
-                else:
-                    hit = 1 # pair
-                if f_draw == True:
-                    outs += 9 # to hit flush
-                    hit = 5 # flush
-            elif hit == 1: # Pair
-                outs += 2 # to hit trips
-                outs += 3 # to hit 2 pair
-                if f_draw == True:
-                    outs += 9 # to hit flush
-                    hit = 5 # flush
-                else:
-                    hit = 3 # trips
-            elif hit == 2: # Two Pair
-                outs += 4 # to hit Full House
-                hit = 6
-            elif hit == 3: # Trips
-                outs += 1 # to hit quads
-                outs += 6 # to hit Full House
-                hit = 7   # quads
-            # hit update for 4 and 5 doesn't consider possibility of hitting RF.  Rare enough to not matter (probably).
-            elif hit == 4: # Straight
-                if f_draw == True:
-                    outs += 1 # to hit straight flush
-                    hit = 8     
-            elif hit == 5: # Flush
-                if s_draw[0] == True:
-                    if s_draw[1] == True: # open draw
-                        outs += 2 # to hit straight flush
-                    else:
-                        outs += 1 # to hit straight flush
-                    hit = 8 
-            elif hit == 6: # Full House
-                outs += 1 # to hit quads
-                hit = 7
-            # no improvement possible for hit > 6 (Quads / SF / RF)
+                print('...   Turn outs   ...')
+
+            if s_draw[0] == True and s_draw[1] == True and f_draw == True: # Open SF sraw
+                outs = 15
+                goal = 9 # SF best, Straight (4) or Flush (5) possible
+            elif s_draw[0] == True and s_draw[1] == True and f_draw == False: # Inside SF draw
+                outs = 12
+                goal = 5 # Flush (5) best, Straight (4) possible
+            else:
+                if s_draw[0] == True and f_draw == False and self.best_hand[0] < 4:
+                    if s_draw[1] == True: # open s draw
+                        outs = 8
+                    else: # inside s draw
+                        outs = 4
+                    goal = 4
+                elif f_draw == True and self.best_hand[0] < 5:
+                    outs = 9
+                    goal = 5
+            
+            if goal == 0 and self.best_hand[0] < 7: 
+                if self.best_hand[0] == 0: # High card
+                    outs = 6 # (Pair)
+                    goal = 1
+                elif self.best_hand[0] == 1: # Pair
+                    outs = 5 # 2 (Trips) + 3 (Two Pair)
+                    goal = 3
+                elif self.best_hand[0] == 2: # Two Pair
+                    outs = 4 # (Full House)
+                    goal = 6
+                elif self.best_hand[0] == 3: # Trips
+                    outs = 7 # 1 (Quads) + 6 (Full House)
+                    goal = 7
+                elif self.best_hand[0] == 5: # Flush
+                    if s_draw[0] == True:
+                        if s_draw[1] == True: # Open SF draw
+                            outs = 2
+                        elif s_draw[1] == False: # Inside SF draw
+                            outs = 1
+                        goal = 8
+                elif self.best_hand[0] == 6: # Full House
+                    outs = 1 # to hit quads
+                    goal = 7
+            if goal == 0:
+                goal = self.best_hand[0] # No improvement possible. Return current hand as goal.
+                
         elif round == 3: # River
             print('All cards dealt. This is as good as it gets.')
-            hit = self.best_hand[0]
+            goal = self.best_hand[0]
 
-# Flop
-   #  Straight Draw?
-        # 4 in a row (+8) or single gap (+4)
-    #   Flush Draw?
-        # Count four of the same suit (+9)
-# High Card
-#     +6 to make pairs
-#       + SD FD
-# Pair
-#      +2 to make trips
-#      +3 to get two pair
-#       + SD FD
-# 2 Pair
-#   +4 to full house
-#       +SD? +FD
-#   
-# Trips
-# + 1 to quads  
-# +SD? +FD       
-# straight
-#  +FD
-# flush
-#   +SD
-# full house
-#   +1
-# quads
-# straight flush
-
-        # print(msg)
-        print('Can improve to: ' + str(hit) + ', outs found: ' + str(outs))
-        print('returning: ' + str([hit, outs]))
-        return [hit, outs]
+        print('Can improve to: ' + str(goal) + ', outs found: ' + str(outs))
+        print('returning: ' + str([goal, outs]) + '\n')
+        return [goal, outs]
 
 
 
@@ -823,9 +809,14 @@ for i in range(1):
     #### Testing outs calculations
     print('flop odds...')
     p1.count_outs(game.get_board(), game.get_round())
-
-
     #############################################
+    game.update_round()
+    game.deal() # turn
+    print(game.info())
+    #### Testing outs calculations
+    print('turn odds...')
+    p1.count_outs(game.get_board(), game.get_round())
+
 
     # print(game.hand_info())
 
