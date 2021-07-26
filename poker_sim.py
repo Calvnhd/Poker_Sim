@@ -504,7 +504,6 @@ def is_s_draw(h,b=[]): # returns bool for [True = draw, True = open]
             r = []
             for j in range(4):
                 r.append(ranks[j])
-            print('r: ' + str(r))
             # find a run of four
             if r[0]+1 == r[1]:
                 if r[0]+2 == r[2]:
@@ -609,25 +608,19 @@ class Player:
         goal = 0 
         s_draw = is_s_draw(self.hand, board)
         f_draw = is_f_draw(self.hand, board)
-        print('s_draw: ' + str(s_draw))
-        print('f_draw: ' + str(f_draw))
 
+        # https://redsharkpoker.com/poker-outs/ for info on outs calculations
         if round == 0: # Pre-Flop
             print('ERROR: Still Pre-Flop')
-        elif round == 1 or round == 2: # Flop
-            if round == 1:
-                print('...   Flop outs   ...')
-            else:
-                print('...   Turn outs   ...')
-
+        elif round == 1 or round == 2: # Flop or Turn
             if s_draw[0] == True and s_draw[1] == True and f_draw == True: # Open SF sraw
                 outs = 15
-                goal = 9 # SF best, Straight (4) or Flush (5) possible
-            elif s_draw[0] == True and s_draw[1] == True and f_draw == False: # Inside SF draw
+                goal = 7 # SF best, Straight (4) or Flush (5) possible
+            elif s_draw[0] == True and s_draw[1] == False and f_draw == True: # Inside SF draw
                 outs = 12
-                goal = 5 # Flush (5) best, Straight (4) possible
+                goal = 8 # SF best, Straight (4) or Flush (5) possible
             else:
-                if s_draw[0] == True and f_draw == False and self.best_hand[0] < 4:
+                if s_draw[0] == True and f_draw == False and self.best_hand[0] < 4: # Straight draw
                     if s_draw[1] == True: # open s draw
                         outs = 8
                     else: # inside s draw
@@ -667,11 +660,24 @@ class Player:
             print('All cards dealt. This is as good as it gets.')
             goal = self.best_hand[0]
 
-        print('Can improve to: ' + str(goal) + ', outs found: ' + str(outs))
-        print('returning: ' + str([goal, outs]) + '\n')
+        if goal == 1:
+            g = 'Pair'
+        elif goal == 2:
+            g = 'Two Pair'
+        elif goal == 3:
+            g = 'Trips'
+        elif goal == 4:
+            g = 'Straight'
+        elif goal == 5:
+            g = 'Flush'
+        elif goal == 6:
+            g = 'Full House'
+        elif goal == 7:
+            g = 'Quads'
+        elif goal == 8:
+            g = 'Straight Flush'
+        print('Can improve to ' + g + ', outs found: ' + str(outs))
         return [goal, outs]
-
-
 
 # Holds all ongoing game elements
 # Players (name, hand, chips, positions), leaders, chip_leaders, Deck, board, pot
@@ -858,13 +864,12 @@ p1 = game.players[0]
 
 for i in range(1):
     print('====  Game ' + str(i) + ' ====')
-    print('...Dealing... ')
     game.deal() # deal & blinds
     game.update_round()
     game.deal() # flop
+    print('...  Flop   ...')
     print(game.info())
     #### Testing outs calculations
-    print('flop odds...')
     p1.count_outs(game.get_board(), game.get_round())
     #############################################
     # game.update_round()
