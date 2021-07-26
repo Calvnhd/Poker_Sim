@@ -455,12 +455,15 @@ def is_s_draw(h,b=[]): # returns bool for [True = draw, True = open]
         ranks.sort()
         # find run of four
         # still need to deal with Aces somehow...
-        print('ranks: '+str(ranks))
-        print('checking for four in a row from i = 0 to ' + str(len(ranks)-4))
-        for i in range(len(ranks) - 4):
+        print('\nranks: '+str(ranks))
+        for i in range(len(ranks)-3):
+            print('i: ' + str(i))
             if ranks[i]+1 == ranks[i+1]:
+                print('1 in a row')
                 if ranks[i]+2 == ranks[i+2]:
+                    print('2 in a row')
                     if ranks[i]+3 == ranks[i+3]:
+                        print('3 in a row found. 4 consecutive numbers. Open straight draw')
                         s_draw = True
 
         if len(ranks) == 4:
@@ -470,7 +473,8 @@ def is_s_draw(h,b=[]): # returns bool for [True = draw, True = open]
         else:
             print('ERROR: Too many cards to calculate Flush draw')
     else:
-        print('ERROR: Straight Draw input must be 4, 5, or 6 cards') 
+        print('ERROR: Straight Draw input must be 4, 5, or 6 cards')
+    print('returning ' + str([s_draw,open])) 
     return [s_draw,open]
 
 # Expand using inheritance to add different player archetypes
@@ -557,7 +561,7 @@ class Player:
         f_draw = is_f_draw(self.hand, board)
         # print('s_draw: ' + str(s_draw))
         # print('f_draw: ' + str(f_draw))
-        print('********************************     TESTING S_DRAW     ***************************************')
+        print('\n********************************     TESTING S_DRAW     ***************************************')
         s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D']])  # error
         s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [5, 'H']])    # yes, open, x2345x
         s_draw = is_s_draw([[3, 'C'], [4, 'H'], [5, 'D'], [7, 'H']])    # yes, inside, 345x7
@@ -573,7 +577,7 @@ class Player:
         s_draw = is_s_draw([[2, 'C'], [14, 'H'], [6, 'D'], [7, 'H'], [8, 'H'], [9, 'H']])   # yes, open, 2 x6789x 14
         s_draw = is_s_draw([[2, 'C'], [4, 'H'], [5, 'D'], [6, 'H'], [9, 'H'], [10, 'H']])   # yes, inside, 2x456 9 10 
         s_draw = is_s_draw([[2, 'C'], [3, 'H'], [5, 'D'], [6, 'H'], [9, 'H'], [10, 'H']])   # yes, inside, 23x56 9 10
-        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [6, 'H'], [7, 'H'], [8, 'H']])   # yes, inside, 234x6 78       
+        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [6, 'H'], [7, 'H'], [8, 'H']])    # yes, inside, 234x6 78       
         s_draw = is_s_draw([[2, 'C'], [14, 'H'], [4, 'D'], [3, 'H'], [5, 'H'], [5, 'H'], [5, 'H']])   # error
         print('***************************************************************************************\n\n')
 
