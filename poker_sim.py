@@ -444,6 +444,8 @@ def is_f_draw(h,b=[]):
         print('ERROR: Too many cards to calculate Flush draw') 
     return f_draw
 
+# returns Straight draw bool [True = draw, True = open]
+# input hand[] and/or board[], combined total of 4 to 6 cards
 def is_s_draw(h,b=[]): # returns bool for [True = draw, True = open]
     cards = h[:]
     cards.extend(b)
@@ -458,39 +460,38 @@ def is_s_draw(h,b=[]): # returns bool for [True = draw, True = open]
                 has_ace = True
         ranks.sort()
     
-        print('\nranks: '+str(ranks))
+        # print('\nranks: '+str(ranks))
         for i in range(len(ranks)-3):
             # make a subset of 4
             r = []
             for j in range(4):
                 r.append(ranks[j+i])
-            print('    r: ' + str(r))
+            # print('    r: ' + str(r))
             # find a run of four
             if r[0]+1 == r[1]:
                 if r[0]+2 == r[2]:
                     if r[0]+3 == r[3]:
-                        print('4 consecutive numbers')
+                        # print('4 consecutive numbers')
                         if has_ace == True:
-                            print('Straight draw, Ace high')
+                            # print('Straight draw, Ace high')
                             return [True, False]
                         else:
-                            print('Open straight draw')
-                        return [True, True]
+                            # print('Open straight draw')
+                            return [True, True]
             # test other consecutive / gap combinations
-            if (r[3] - r[0]) == 4:
-                print('...in straight range')
+            if (r[3] - r[0]) == 4: # in Straight range
                 if r[0]+2 == r[1] and r[0]+3 == r[2]:
-                    print('ACDE: Inside Straight Draw')
+                    # print('ACDE: Inside Straight Draw')
                     return [True, False]
                 if r[0]+1 == r[1] and r[0]+3 == r[2]:
-                    print('ABDE: Inside Straight Draw')
+                    # print('ABDE: Inside Straight Draw')
                     return [True, False]
                 if r[0]+1 == r[1] and r[0]+2 == r[2]:
-                    print('ABCE: Inside Straight Draw')
+                    # print('ABCE: Inside Straight Draw')
                     return [True, False]
 
         if has_ace == True: # repeat the process once more with ace low
-            print('Consider ace low...')
+            # print('Consider ace low...')
             ranks = []
             for i in range(len(cards)):
                 if cards[i][0] == 14:
@@ -499,31 +500,28 @@ def is_s_draw(h,b=[]): # returns bool for [True = draw, True = open]
                     ranks.append(cards[i][0])
             ranks.sort()
 
-            print('\nranks: '+str(ranks))
-            # make a subset of 4
-            # only need first 4 to test low ace scenario
+            # make a subset of 4 only need first 4 to test low ace scenario
             r = []
             for j in range(4):
                 r.append(ranks[j])
-            print('    r: ' + str(r))
+            print('r: ' + str(r))
             # find a run of four
             if r[0]+1 == r[1]:
                 if r[0]+2 == r[2]:
                     if r[0]+3 == r[3]:
-                        print('4 consecutive numbers.')
-                        print('Straight draw, Ace low')
+                        # print('4 consecutive numbers.')
+                        # print('Straight draw, Ace low')
                         return [True, False]
             # test other consecutive / gap combinations
-            if (r[3] - r[0]) == 4:
-                print('...in straight range')
+            if (r[3] - r[0]) == 4:  # in Straight range
                 if r[0]+2 == r[1] and r[0]+3 == r[2]:
-                    print('ACDE: Inside Straight Draw')
+                    # print('ACDE: Inside Straight Draw')
                     return [True, False]
                 if r[0]+1 == r[1] and r[0]+3 == r[2]:
-                    print('ABDE: Inside Straight Draw')
+                    # print('ABDE: Inside Straight Draw')
                     return [True, False]
                 if r[0]+1 == r[1] and r[0]+2 == r[2]:
-                    print('ABCE: Inside Straight Draw')
+                    # print('ABCE: Inside Straight Draw')
                     return [True, False]
     else:
         print('ERROR: Straight Draw input must be 4, 5, or 6 cards')
@@ -611,28 +609,8 @@ class Player:
         goal = 0 
         s_draw = is_s_draw(self.hand, board)
         f_draw = is_f_draw(self.hand, board)
-        # print('s_draw: ' + str(s_draw))
-        # print('f_draw: ' + str(f_draw))
-        print('\n********************************     TESTING S_DRAW     ***************************************')
-        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [5, 'H']])    # yes, open, x2345x
-        s_draw = is_s_draw([[3, 'C'], [4, 'H'], [2, 'D'], [14, 'H']])    # yes, inside, 345x7
-        s_draw = is_s_draw([[11, 'C'], [13, 'H'], [12, 'D'], [14, 'H']])    # yes, inside, 345x7
-        s_draw = is_s_draw([[3, 'C'], [5, 'H'], [6, 'D'], [7, 'H']])    # yes, inside, 345x7
-        s_draw = is_s_draw([[4, 'C'], [5, 'H'], [6, 'D'], [9, 'H']])    # no
-        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [5, 'H'], [7, 'H']])  # yes, open,   x2345x 7
-        s_draw = is_s_draw([[2, 'C'], [4, 'H'], [5, 'D'], [6, 'H'], [7, 'H']])  # yes, open,   2 x4567x        
-        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [6, 'D'], [7, 'H'], [9, 'H']]) # yes, inside, 2x456 10
-        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [5, 'D'], [6, 'H'], [10, 'H']]) # yes, inside, 23x56 10
-        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [6, 'H'], [10, 'H']]) # yes, inside, 234x6 10
-        s_draw = is_s_draw([[2, 'C'], [4, 'H'], [5, 'D'], [6, 'H'], [8, 'H']])  # no
-        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [5, 'H'], [7, 'H'], [8, 'H']])    # yes, open, x2345x 78
-        s_draw = is_s_draw([[2, 'C'], [4, 'H'], [5, 'D'], [6, 'H'], [7, 'H'], [9, 'H']])    # yes, open, 2 x4567x 9
-        s_draw = is_s_draw([[2, 'C'], [14, 'H'], [6, 'D'], [7, 'H'], [8, 'H'], [9, 'H']])   # yes, open, 2 x6789x 14
-        s_draw = is_s_draw([[2, 'C'], [4, 'H'], [5, 'D'], [6, 'H'], [9, 'H'], [10, 'H']])   # yes, inside, 2x456 9 10 
-        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [5, 'D'], [6, 'H'], [9, 'H'], [11, 'H']])   # yes, inside, 23x56 9 10
-        s_draw = is_s_draw([[2, 'C'], [9, 'H'], [4, 'D'], [12, 'H'], [11, 'H'], [13, 'H']])    # yes, inside, 234x6 78
-        s_draw = is_s_draw([[2, 'C'], [14, 'H'], [3, 'D'], [4, 'H'], [12, 'H'], [13, 'H']])    # yes, inside, 234x6 78       
-        print('***************************************************************************************\n\n')
+        print('s_draw: ' + str(s_draw))
+        print('f_draw: ' + str(f_draw))
 
         if round == 0: # Pre-Flop
             print('ERROR: Still Pre-Flop')
