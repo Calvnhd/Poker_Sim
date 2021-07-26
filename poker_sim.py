@@ -422,13 +422,9 @@ def start_hand_value(h):
 # returns bool for flush draw
 # input hand[] and/or board[], combined total of 4 to 6 cards
 def is_f_draw(h,b=[]): 
-    print('h: ' + str(h))
-    print('b: ' + str(b))
     seen = h[:]
     seen.extend(b)
     f_draw = False
-
-    print('\nSearching for Flush draw in ' + str(seen) + ' length ' + str(len(seen)))
     if len(seen) > 3 and len(seen) < 7:
         # extract suits
         suits = []
@@ -442,34 +438,40 @@ def is_f_draw(h,b=[]):
                 if s[i] == suits[j]:
                     count += 1
             if count == 4:
-                print('Found Flush draw')
                 f_draw = True
-
     else:
         print('ERROR: Too many cards to calculate Flush draw') 
-
     return f_draw
 
-# update to look at 5 card board alone?
-def is_s_draw(H,B): # returns bool for [True = draw, True = open]
-    h = []
-    b = []
-    # Ensure correct inputs
-    if len(H) == 2 and len(B) > len(H):
-        h = H[:]
-        b = B[:]
-    elif len(B) == 2 and len(H) > len(B): 
-        h = B[:]
-        b = H[:]
+def is_s_draw(h,b=[]): # returns bool for [True = draw, True = open]
+    cards = h[:]
+    cards.extend(b)
+    s_draw = False
+    open = False
+    ranks = []
+    if len(cards) > 3 and len(cards) < 7:
+        for i in range(len(cards)):
+            ranks.append(cards[i][0])
+        ranks.sort()
+        # find run of four
+        # still need to deal with Aces somehow...
+        print('ranks: '+str(ranks))
+        print('checking for four in a row from i = 0 to ' + str(len(ranks)-4))
+        for i in range(len(ranks) - 4):
+            if ranks[i]+1 == ranks[i+1]:
+                if ranks[i]+2 == ranks[i+2]:
+                    if ranks[i]+3 == ranks[i+3]:
+                        s_draw = True
+
+        if len(ranks) == 4:
+            pass
+        elif len(ranks) == 5 or len(ranks) == 6:
+            pass
+        else:
+            print('ERROR: Too many cards to calculate Flush draw')
     else:
-        print('ERROR:  Incorrect input.')
-        return -1
-    return [False, False]
-
-
-def find_board_outs(b):
-    pass
-
+        print('ERROR: Straight Draw input must be 4, 5, or 6 cards') 
+    return [s_draw,open]
 
 # Expand using inheritance to add different player archetypes
 class Player:
@@ -553,8 +555,28 @@ class Player:
         goal = 0 
         s_draw = is_s_draw(self.hand, board)
         f_draw = is_f_draw(self.hand, board)
-        print('s_draw: ' + str(s_draw))
-        print('f_draw: ' + str(f_draw))
+        # print('s_draw: ' + str(s_draw))
+        # print('f_draw: ' + str(f_draw))
+        print('********************************     TESTING S_DRAW     ***************************************')
+        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D']])  # error
+        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [5, 'H']])    # yes, open, x2345x
+        s_draw = is_s_draw([[3, 'C'], [4, 'H'], [5, 'D'], [7, 'H']])    # yes, inside, 345x7
+        s_draw = is_s_draw([[4, 'C'], [5, 'H'], [6, 'D'], [9, 'H']])    # no
+        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [5, 'H'], [7, 'H']])  # yes, open,   x2345x 7
+        s_draw = is_s_draw([[2, 'C'], [4, 'H'], [5, 'D'], [6, 'H'], [7, 'H']])  # yes, open,   2 x4567x        
+        s_draw = is_s_draw([[2, 'C'], [4, 'H'], [5, 'D'], [6, 'H'], [10, 'H']]) # yes, inside, 2x456 10
+        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [5, 'D'], [6, 'H'], [10, 'H']]) # yes, inside, 23x56 10
+        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [6, 'H'], [10, 'H']]) # yes, inside, 234x6 10
+        s_draw = is_s_draw([[2, 'C'], [4, 'H'], [5, 'D'], [6, 'H'], [8, 'H']])  # no
+        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [5, 'H'], [7, 'H'], [8, 'H']])    # yes, open, x2345x 78
+        s_draw = is_s_draw([[2, 'C'], [4, 'H'], [5, 'D'], [6, 'H'], [7, 'H'], [9, 'H']])    # yes, open, 2 x4567x 9
+        s_draw = is_s_draw([[2, 'C'], [14, 'H'], [6, 'D'], [7, 'H'], [8, 'H'], [9, 'H']])   # yes, open, 2 x6789x 14
+        s_draw = is_s_draw([[2, 'C'], [4, 'H'], [5, 'D'], [6, 'H'], [9, 'H'], [10, 'H']])   # yes, inside, 2x456 9 10 
+        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [5, 'D'], [6, 'H'], [9, 'H'], [10, 'H']])   # yes, inside, 23x56 9 10
+        s_draw = is_s_draw([[2, 'C'], [3, 'H'], [4, 'D'], [6, 'H'], [7, 'H'], [8, 'H']])   # yes, inside, 234x6 78       
+        s_draw = is_s_draw([[2, 'C'], [14, 'H'], [4, 'D'], [3, 'H'], [5, 'H'], [5, 'H'], [5, 'H']])   # error
+        print('***************************************************************************************\n\n')
+
         if round == 0: # Pre-Flop
             print('ERROR: Still Pre-Flop')
         elif round == 1 or round == 2: # Flop
