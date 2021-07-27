@@ -597,13 +597,11 @@ class Player:
         self.active = a
     def find_best_hand(self, board):
         self.best_hand = make_hands(self.hand, board)
-
     # returns list [goal,outs]
     # goal: best case hand improvement, outs: number of cards (chances) to hit goal
-    # Needs rechecking.  Pull outs from deck and count to avoid duplicates?
     def count_outs(self, board, round):
         self.find_best_hand(board)
-        print(str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand)))
+        # print(str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand)))
         outs = 0 
         goal = 0 
         s_draw = is_s_draw(self.hand, board)
@@ -615,7 +613,7 @@ class Player:
         elif round == 1 or round == 2: # Flop or Turn
             if s_draw[0] == True and s_draw[1] == True and f_draw == True: # Open SF sraw
                 outs = 15
-                goal = 7 # SF best, Straight (4) or Flush (5) possible
+                goal = 8 # SF best, Straight (4) or Flush (5) possible
             elif s_draw[0] == True and s_draw[1] == False and f_draw == True: # Inside SF draw
                 outs = 12
                 goal = 8 # SF best, Straight (4) or Flush (5) possible
@@ -660,23 +658,24 @@ class Player:
             print('All cards dealt. This is as good as it gets.')
             goal = self.best_hand[0]
 
-        if goal == 1:
-            g = 'Pair'
-        elif goal == 2:
-            g = 'Two Pair'
-        elif goal == 3:
-            g = 'Trips'
-        elif goal == 4:
-            g = 'Straight'
-        elif goal == 5:
-            g = 'Flush'
-        elif goal == 6:
-            g = 'Full House'
-        elif goal == 7:
-            g = 'Quads'
-        elif goal == 8:
-            g = 'Straight Flush'
-        print('Can improve to ' + g + ', outs found: ' + str(outs))
+        # if goal == 1:
+        #     g = 'Pair'
+        # elif goal == 2:
+        #     g = 'Two Pair'
+        # elif goal == 3:
+        #     g = 'Trips'
+        # elif goal == 4:
+        #     g = 'Straight'
+        # elif goal == 5:
+        #     g = 'Flush'
+        # elif goal == 6:
+        #     g = 'Full House'
+        # elif goal == 7:
+        #     g = 'Quads'
+        # elif goal == 8:
+        #     g = 'Straight Flush'
+        # print('Can improve to ' + g + ', outs found: ' + str(outs))
+
         return [goal, outs]
 
 # Holds all ongoing game elements
@@ -861,74 +860,67 @@ class Game:
 
 game = Game(['CD', 'IK', 'BM'])
 p1 = game.players[0]
-
-for i in range(1):
-    print('====  Game ' + str(i) + ' ====')
+jk = []
+j = []
+k = []
+done = False
+i = 0
+while not done:
+    print('\n====  Game ' + str(i) + ' ====')
     game.deal() # deal & blinds
     game.update_round()
     game.deal() # flop
-    print('...  Flop   ...')
-    print(game.info())
     #### Testing outs calculations
-    p1.count_outs(game.get_board(), game.get_round())
+    jk.append(p1.count_outs(game.get_board(), game.get_round()))
     #############################################
-    # game.update_round()
-    # game.deal() # turn
-    # print(game.info())
-    # #### Testing outs calculations
-    # print('turn odds...')
-    # p1.count_outs(game.get_board(), game.get_round())
+    game.update_round()
+    game.deal() # turn
+    #### Testing outs calculations
+    jk.append(p1.count_outs(game.get_board(), game.get_round()))
+    #############################################
+    game.update_round()
+    game.deal() # river
+    game.update_round()
+    game.find_leaders()
+    print(game.info())
+    print(game.hand_info())
+    print(game.award_pot())
+    game.update_positions()
+
+    j.append(jk[i][0])
+    k.append(jk[i][1])
+
+    g = list(set(j))
+    o = list(set(k))
+    g.sort()
+    o.sort()
+
+    if (len(g) == 7 and len(o) == 11) or i > 1000000:
+        done = True
+    i += 1
 
 
-    # print(game.hand_info())
+# print(jk)
 
-    # game.deal() # turn
-    # game.deal() # river
-    # game.find_leaders()
+print(g)
+print(len(g))
+print(o)
+print(len(o))
 
-
-    # print(game.award_pot())
-    # game.update_positions()
-
-
+# # Core loop to date 27/7
 # game = Game(['CD', 'IK', 'BM'])
-# for i in range(100):
-#     print('====  Game ' + str(i) + ' ====')
+# for i in range(1):
+#     print('\n====  Game ' + str(i) + ' ====')
 #     game.deal() # deal & blinds
+#     game.update_round()
 #     game.deal() # flop
+#     game.update_round()
 #     game.deal() # turn
+#     game.update_round()
 #     game.deal() # river
+#     game.update_round()
 #     game.find_leaders()
-
-#     print('...Results... ')
 #     print(game.info())
 #     print(game.hand_info())
-
 #     print(game.award_pot())
 #     game.update_positions()
-
-# # Testing 2 card hand eval
-# len_check = 0
-# t_deck = Deck()
-# vals = []
-# j = 0
-# while len_check != 15 and j < 100000:
-#     t_deck.shuffle()
-#     h = []
-#     # h = [[[7,'S'],[3,'D']],[[8,'S'],[4,'S']]]
-#     for i in range(0,t_deck.get_size(),2):
-#         x = []
-#         x.append(t_deck.take_card())
-#         x.append(t_deck.take_card())
-#         h.append(x)
-#     for i in range(len(h)):
-#         v = start_hand_value(h[i])
-#         vals.append(v)
-#         print(str(h[i]) + ' --- ' + str(v))
-#     len_check = len(set(vals))
-#     j += 1
-# print('i: ' + str(j))
-# print(vals)
-# print('looked at ' + str(len(vals)) + ' pairs of cards')
-# print(set(vals))
-# print(len(set(vals)))
