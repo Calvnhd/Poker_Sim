@@ -574,38 +574,41 @@ class Player:
         print('      current_bet: ' + str(current_bet))
         print('       prev_raise: ' + str(prev_raise))
 
-        # Expand this decision tree for different player archetypes!
-        # Simple rules...
-            # Pre Flop  -- fold: cards >4 ranks apart & unsuited
-            #              call: anything else (2x bb)
-            #              bet:  pockets (4x bb, never fold), both cards >= 10 (2x bb, never fold), suited connectors (2x bb),
-            #     Flop  -- fold: anything worse than ace high
-            #              call: 
-            #              bet:  
-            #     Turn  -- fold: cards >4 ranks apart, unsuited
-            #              call: 
-            #              bet:  
-            #    River  -- fold: cards >4 ranks apart, unsuited
-            #              call: 
-            #              bet:  
         amount = 0
         action = ''
         if self.active == False:
             print('Inactive player. No action taken by ' + str(self.name))
         else: 
             if round == 0: # Pre-Flop
-                print('Checking starting hand strength...')
+                print('Checking starting hand strength for... ' + str(self.hand))
                 val = start_hand_value(self.hand)
                 print('Hand value: ' + str(val))
-                if val >=5 and current_bet < 8*bb:
-                    action = 'bet'
-                    amount = current_bet + 4*bb
+                if my_prev_bet == int(bb/2):
+                    print('THIS PLAYER POSTED SB')
+                if my_prev_bet == current_bet:
+                    print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
+                    action = 'end'
+                    amount = 0
+                elif val >=10:
+                    if current_bet == 0:
+                        action = 'bet'
+                        amount = bb
+                    if current_bet >= bb and current_bet <= 4*bb:
+                        action = 'bet'
+                        amount = current_bet + 2*prev_raise - my_prev_bet
+                    elif current_bet >= 4*bb:
+                        action = 'call'
+                        amount = current_bet - my_prev_bet
                 elif val >=5:
-                    action = 'call'
-                    amount = current_bet
-                elif current_bet == bb or prev_raise == 0:
-                    action = 'call'
-                    amount = current_bet
+                    if current_bet == 0:
+                        action = 'bet'
+                        amount = bb
+                    if current_bet >= bb and current_bet <= 3*bb:
+                        action = 'bet'
+                        amount = current_bet + prev_raise - my_prev_bet
+                    elif current_bet >= 3*bb:
+                        action = 'call'
+                        amount = current_bet - my_prev_bet
                 else:
                     action = 'fold'
                     amount = 0
@@ -638,7 +641,7 @@ class Player:
                     amount = 0
                     is_active = False
         self.chips -= amount    
-        return [action,amount]
+        return [action,amount+my_prev_bet]
 
     def set_active(self, a):
         self.active = a
@@ -910,6 +913,7 @@ class Game:
     # Return continue dealing or award pot (+ winner and amount) 
     def players_act(self):
     # initialize values
+        end_name = 0
         player_bets = []  # track how many chips a player has committed per betting round
         player_turn_count = [] # track how many turns a player has taken.  Not sure if you need this??
         for i in range(self.player_count):
@@ -962,24 +966,36 @@ class Game:
             print(' Active: ' + str(players_active))
             print('Actions: ' + str(player_actions))
             print('   Bets: ' + str(player_bets))
+            print(' ')
         
             # look through list of players. 
             for i in range(self.player_count):
                 if self.players[i].get_position() == player_turn: # is player's turn
+                    pl_prev_bet = player_bets[i]
                     action = []
                     if self.players[i].is_active():
-                        action = self.players[i].action(self.round, self.pot, self.bb, current_bet, prev_raise, player_bets[i])
-                        print('Action: ' + str(action) + '\n')
+                        action = self.players[i].action(self.round, self.pot, self.bb, current_bet, prev_raise, pl_prev_bet)
+                        print('Action: ' + str(action))
                         player_actions[i] = action[0]
                         player_bets[i] = action[1]
+                        print(names)
+                        print(player_actions)
+                        print(player_bets)
                         if action[0] == 'fold':
                             players_active[i] = False
+                        elif action[0] == 'end':
+                            print('End action detected in Game loop at player ' + str(self.players[i].get_name()))
+                            end_name = self.players[i].get_name()
+                            done = True
+                            break
                     else:
                         print(str(self.players[i].get_name) + ' is not active')    
 
+                    print('--- info update for next player ---')
                     # update info for next player decision
                     if action[1] > 0: # bet or call
-                        self.pot += action[1] # add bet/call to pot
+                        print('adding ' + str(action[1] - pl_prev_bet) + ' to the pot')
+                        self.pot += (action[1] - pl_prev_bet) # add bet/call to pot
                         if action[1] > current_bet: # find raise
                             prev_raise = abs(action[1] - current_bet)
                             current_bet = action[1]
@@ -987,38 +1003,34 @@ class Game:
                         player_turn = 0 
                     else: 
                         player_turn += 1
-                    print('Next player to act is at position ' + str(player_turn))
-            
-            
-
-            # End betting round conditions (sufficent calls or folds)
-            calls = 0
-            active = 0
-            inactive = 0
-            for i in range(len(players_active)):
-                if players_active[i] == True:
-                    active +=1
-                else:
-                    inactive += 1
-                if player_actions[i] == 'call':
-                    calls += 1
-            
-            if (calls >= active - 1) or (inactive == len(players_active) - 1):
+                    print('Next player to act is at position ' + str(player_turn) + '\n')
+           
+            # for testing / safety
+            if w > 10: 
+                print('While loop killed by w > condition')
                 done = True
-
             # For testing
             w += 1
-            if w > 1:
-                done = True
-
+        
+        # check for folds
+        folds = 0
+        for i in range(len(player_actions)):
+            if player_actions[i] == 'fold':
+                folds += 1
 
         print('\nFINISHED TAKING ACTIONS')
         print(player_actions)
         print(player_bets)
         print(players_active)
-        return done
+        print(str(folds) + ' players have folded out of ' + str(len(player_actions)) + ' players')
 
-game = Game(['CD', 'IK', 'BM', 'AB', 'BC'])
+        if folds == len(player_actions) - 1:
+            print('No more dealing needed')
+            return ['award',end_name,self.pot]
+
+        return [0]
+
+game = Game(['CD', 'IK', 'BM'])
 done = False
 i = 0
 while not done:
@@ -1027,8 +1039,9 @@ while not done:
     game.deal() # deal & blinds
     print(game.info())
     print('\nPre-Flop Actions ====================')
-    game.players_act()
+    x = game.players_act()
     print('=====================================\n')
+    print('Flop results: ' + str(x) + '\n')
     game.update_round()
 
     game.deal() # flop
