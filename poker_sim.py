@@ -563,6 +563,14 @@ class Player:
     def set_best_hand(self, h):
         self.best_hand = h
     def action(self, round, pot, bb, current_bet, prev_raise): # Decide whether to bet/raise or call (return int amount), or check/fold (return 0)
+        print('        round: ' + str(round))
+        print('Player acting: ' + str(self.name))
+        print('     position: ' + str(self.position))
+        print('          pot: ' + str(pot))
+        print('           bb: ' + str(bb))
+        print('  current_bet: ' + str(current_bet))
+        print('   prev_raise: ' + str(prev_raise))
+
         # Expand this decision tree for different player archetypes!
         # Simple rules...
             # Pre Flop  -- fold: cards >4 ranks apart & unsuited
@@ -592,6 +600,7 @@ class Player:
                 pass
             elif round == 3: # River
                 pass
+        print('')
         return a
     def set_active(self, a):
         self.active = a
@@ -857,55 +866,64 @@ class Game:
         else:
             output = "ERROR! CAN'T PRINT HAND INFO PRE-FLOP"
         return output
+    def players_act(self):
+        current_bet = 0
+        prev_raise = 0
+        player_turn = 0
+        done = False
+        for j in range(self.player_count):
+            # look through list of players. If it's their turn (based on position) take action.
+            for i in range(self.player_count): 
+                if self.players[i].get_position() == player_turn:
+                    self.players[i].action(self.round, self.pot, self.bb, current_bet, prev_raise)
+                    player_turn += 1
+        return done
 
 game = Game(['CD', 'IK', 'BM'])
-p1 = game.players[0]
-jk = []
-j = []
-k = []
 done = False
 i = 0
 while not done:
-    print('\n====  Game ' + str(i) + ' ====')
+    print('\n****  Game ' + str(i) + ' ****')
+
     game.deal() # deal & blinds
+    print(game.info())
+    print('\nPre-Flop Actions ====================')
+    game.players_act()
+    print('=====================================\n')
     game.update_round()
+
     game.deal() # flop
-    #### Testing outs calculations
-    jk.append(p1.count_outs(game.get_board(), game.get_round()))
-    #############################################
-    game.update_round()
-    game.deal() # turn
-    #### Testing outs calculations
-    jk.append(p1.count_outs(game.get_board(), game.get_round()))
-    #############################################
-    game.update_round()
-    game.deal() # river
-    game.update_round()
-    game.find_leaders()
     print(game.info())
     print(game.hand_info())
+    print('\nFlop Actions ========================')
+    game.players_act()
+    print('=====================================\n')
+    game.update_round()
+
+    game.deal() # turn
+    print(game.info())
+    print(game.hand_info())
+    print('\nTurn Actions ========================')
+    game.players_act()
+    print('=====================================\n')
+    game.update_round()
+
+    game.deal() # river
+    print(game.info())
+    print(game.hand_info())
+    print('\nRiver Actions =======================')
+    game.players_act()
+    print('=====================================\n')
+    game.update_round()
+
+    game.find_leaders()
     print(game.award_pot())
     game.update_positions()
 
-    j.append(jk[i][0])
-    k.append(jk[i][1])
-
-    g = list(set(j))
-    o = list(set(k))
-    g.sort()
-    o.sort()
-
-    if (len(g) == 7 and len(o) == 11) or i > 1000000:
-        done = True
     i += 1
-
-
-# print(jk)
-
-print(g)
-print(len(g))
-print(o)
-print(len(o))
+    if i > 0:
+        done = True
+    
 
 # # Core loop to date 27/7
 # game = Game(['CD', 'IK', 'BM'])
