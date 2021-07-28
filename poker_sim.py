@@ -53,7 +53,7 @@ class Deck:
 # Need to update to compare value of same hands
 def evaluate_hand(hand):
     if not (len(hand) == 5):
-        print('ERROR COMPARING HANDS')
+        print('ERROR COMPARING HANDS for hand: ' + str(hand))
         return -1
     # Bool for making a hand
     quads = False
@@ -216,21 +216,33 @@ def interpret_eval(hand):
 # h1 and h2 must be output from evaluate_hand
 # returns the best of h1 or h2 in the same format as input, or 0 if they are equal
 def compare_hands(h1, h2, i=0):
+    # print('COMPARING HANDS for h1 and h2: ' + str(h1) + ' ... ' + str(h2))
+    # print('i: ' + str(i))
     if i == 7: # Base case
-        print('ERROR COMPARING HANDS')
+        print('ERROR COMPARING HANDS for h1 and h2: ' + str(h1) + ' ... ' + str(h2) + ' ... i == 7')
         return -1
     if h1 == h2:
+        # print('h1 == h2: ' + str(h1) + ' == ' + str(h2))
         return 0
     if h1[i] > h2[i]:
+        # print('h1[i] > h2:[i] ' + str(h1[i]) + ' > ' + str(h2[i]))
         return h1
     elif h1[i] < h2[i]:
+        # print('h1[i] < h2:[i] ' + str(h1[i]) + ' == ' + str(h2[i]))
         return h2
     else:
         if h1[i] == h2[i] and len(h1) == len(h2):
+            # print('h1[i] and h2[i] are equal. h1 and h2 are equal length')
             i += 1
             return compare_hands(h1,h2,i)
+        if h1 == [0,0,0] and h2 != [0,0,0]:
+            # print('h1 is folded')
+            return h2
+        if h2 == [0,0,0] and h1 != [0,0,0]:
+            # print('h2 is folded')
+            return h1
         else:
-            print('ERROR COMPARING HANDS')
+            print('ERROR COMPARING HANDS for h1 and h2: ' + str(h1) + ' ... ' + str(h2))
             return -1
 
 # Finds the best hand a player can make with their 2 cards
@@ -600,7 +612,7 @@ class Player:
                     elif current_bet >= 4*bb:
                         action = 'call'
                         amount = current_bet - my_prev_bet
-                elif val >=5:
+                elif val >=2:
                     if current_bet == 0:
                         action = 'bet'
                         amount = bb
@@ -619,7 +631,7 @@ class Player:
                     print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
                     action = 'end'
                     amount = 0
-                elif True: 
+                elif True: # Very good
                     if current_bet == 0:
                         action = 'bet'
                         amount = bb
@@ -629,7 +641,7 @@ class Player:
                     elif current_bet >= 4*bb:
                         action = 'call'
                         amount = current_bet - my_prev_bet
-                elif True:
+                elif True: # Baseline (keep low for testing)
                     if current_bet == 0:
                         action = 'bet'
                         amount = bb
@@ -645,22 +657,65 @@ class Player:
                     self.active = False
             elif round == 2: # Turn
                 print('*** Doing something at Turn ***')
-                if True:
-                    action = 'call'
-                    amount = current_bet
+                if my_prev_bet == current_bet:
+                    print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
+                    action = 'end'
+                    amount = 0
+                elif True: # Very good
+                    if current_bet == 0:
+                        action = 'bet'
+                        amount = bb
+                    if current_bet >= bb and current_bet <= 4*bb:
+                        action = 'bet'
+                        amount = current_bet + 2*prev_raise - my_prev_bet
+                    elif current_bet >= 4*bb:
+                        action = 'call'
+                        amount = current_bet - my_prev_bet
+                elif True: # Baseline (keep low for testing)
+                    if current_bet == 0:
+                        action = 'bet'
+                        amount = bb
+                    if current_bet >= bb and current_bet <= 3*bb:
+                        action = 'bet'
+                        amount = current_bet + prev_raise - my_prev_bet
+                    elif current_bet >= 3*bb:
+                        action = 'call'
+                        amount = current_bet - my_prev_bet
                 else:
                     action = 'fold'
                     amount = 0
-                    is_active = False
+                    self.active = False
+                
             elif round == 3: # River
                 print('*** Doing something at River ***')
-                if True:
-                    action = 'call'
-                    amount = current_bet
+                if my_prev_bet == current_bet:
+                    print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
+                    action = 'end'
+                    amount = 0
+                elif True: # Very good
+                    if current_bet == 0:
+                        action = 'bet'
+                        amount = bb
+                    if current_bet >= bb and current_bet <= 4*bb:
+                        action = 'bet'
+                        amount = current_bet + 2*prev_raise - my_prev_bet
+                    elif current_bet >= 4*bb:
+                        action = 'call'
+                        amount = current_bet - my_prev_bet
+                elif True: # Baseline (keep low for testing)
+                    if current_bet == 0:
+                        action = 'bet'
+                        amount = bb
+                    if current_bet >= bb and current_bet <= 3*bb:
+                        action = 'bet'
+                        amount = current_bet + prev_raise - my_prev_bet
+                    elif current_bet >= 3*bb:
+                        action = 'call'
+                        amount = current_bet - my_prev_bet
                 else:
                     action = 'fold'
                     amount = 0
-                    is_active = False
+                    self.active = False
         self.chips -= amount    
         return [action,amount+my_prev_bet]
 
@@ -915,7 +970,7 @@ class Game:
                     self.players[i].set_best_hand([0,0,0])
                 self.best_hand = find_best_hand(self.hands)
             print('Player hands: ' + str(self.hands))
-            print('Best hand: ' + str(self.best_hand))
+            print('Best hand: ' + str(self.best_hand) + ' ... ' + str(interpret_eval(self.best_hand)))
             # Match player hand to best hand
             for i in range(self.player_count):
                 if self.best_hand == self.players[i].get_best_hand():
@@ -942,7 +997,12 @@ class Game:
         else:
             output = "ERROR! CAN'T PRINT HAND INFO PRE-FLOP"
         return output
-
+    def count_active_players(self):
+        c = 0
+        for i in range(self.player_count):
+            if self.players[i].is_active() == True:
+                c += 1
+        return c
     # Return continue dealing or award pot (+ winner and amount) 
     def players_act(self):
     # initialize values
@@ -1074,37 +1134,52 @@ while not done:
     game.deal() # deal & blinds
     print(game.info())
     print('\nPre-Flop Actions ====================')
-    x = game.players_act()
+    results = game.players_act()
+    print('=====================================')
+    print('Pre-Flop results: ' + str(results))
     print('=====================================\n')
-    print('Pre-Flop results: ' + str(x) + '\n')
-    # write a function to count the number of active players.  If only one, then award pot.
-    # you might be able to use award pot function since it now excludes players who have folded??
-    
-    game.update_round()
-    game.deal() # flop
-    # print(game.info())
-    # print(game.hand_info())
-    # print('\nFlop Actions ========================')
-    # game.players_act()
-    # print('=====================================\n')
     game.update_round()
 
-    game.deal() # turn
-    # print(game.info())
-    # print(game.hand_info())
-    # print('\nTurn Actions ========================')
-    # game.players_act()
-    # print('=====================================\n')
-    game.update_round()
+    print('Game sees ' + str(game.count_active_players()) + ' active players remaining before Flop')
+    if game.count_active_players() > 1:
+        game.deal() # flop
+        print(game.info())
+        print(game.hand_info())
+        print('\nFlop Actions ========================')
+        # game.players_act()
+        print('=====================================')
+        print('Flop results: ' + str(results))
+        print('=====================================\n')
+        game.update_round()
+        
+        print('Game sees ' + str(game.count_active_players()) + ' active players remaining before Turn')
+        if game.count_active_players() > 1:
+            game.deal() # turn
+            # print(game.info())
+            # print(game.hand_info())
+            print('\nTurn Actions ========================')
+            # game.players_act()
+            print('=====================================')
+            print('Turn results: ' + str(results))
+            print('=====================================\n')
+            game.update_round()
 
-    game.deal() # river
-    # print(game.info())
-    # print(game.hand_info())
-    # print('\nRiver Actions =======================')
-    # game.players_act()
-    # print('=====================================\n')
-    game.update_round()
+            print('Game sees ' + str(game.count_active_players()) + ' active players remaining before Turn')
+            if game.count_active_players() > 1:
+                game.deal() # river
+                # print(game.info())
+                # print(game.hand_info())
+                print('\nRiver Actions =======================')
+                # game.players_act()
+                print('=====================================')
+                print('River results: ' + str(results))
+                print('=====================================\n')
+                game.update_round()
 
+    print('\n***** END OF HAND *****')
+    print('Game sees ' + str(game.count_active_players()) + ' active players at end')
+    if game.count_active_players() > 1:
+        print('SHOWDOWN!')
     game.find_leaders()
     print(game.award_pot())
     game.update_positions()
