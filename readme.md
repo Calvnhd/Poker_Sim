@@ -6,6 +6,10 @@
 * new -- most up to date, new features and work in progress
 * master -- latest milestone
 ### In Progress
+* Betting fundamental mechanics Pre Flop to River
+* Thresholds on chips and removing players
+* Side pots
+* More complex decision making
 * Add betting
     * Basic
         * only bet / call same amount all players for now.  Extend this later
@@ -27,7 +31,8 @@
 * Find the best hand out of 5 to 7 cards
 * Comparing two hands, comparing multiple hands
 * Game() class with loopable steps, storing all game info including instances of Player and Deck objects
-* Rating for starting hands
+* Rating for starting hands, outs on flop and turn, to predict
+
 ### Ideas to extend
 * Visualise sorting algorithms
 * Game based on influencing player emotions

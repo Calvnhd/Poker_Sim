@@ -248,6 +248,10 @@ def compare_hands(h1, h2, i=0):
 # Finds the best hand a player can make with their 2 cards
 # takes 2 cards from hand, 3 to 5 cards from board, and returns the best hand in the form of eval code
 def make_hands(H, B):
+    if len(H) + len(B) < 5:
+        print('ERROR! Not enough cards on board to make_hands')
+        return -1
+
     h = []
     b = []
     best = []
@@ -552,9 +556,14 @@ class Player:
         self.active = True
     def get_chips(self):
         return self.chips
-    def bet(self, amount):  # need to check that betting won't be more than total chips
-        self.chips -= amount
-        return amount
+    def bet(self, amount):
+        if self.chips >= amount:
+            self.chips -= amount
+            return amount
+        else: # bet all remaining chips
+            chips_left = self.chips
+            self.chips = 0
+            return chips_left
     def add_chips(self, amount):
         self.chips += amount
     def info(self):
@@ -581,145 +590,185 @@ class Player:
 
     # return decision
     # [fold/call/bet or raise , amount]
-    def action(self, round, pot, bb, current_bet, prev_raise, my_prev_bet): # Decide whether to bet/raise or call (return int amount), or check/fold (return 0)
+    def action(self, round, board, pot, bb, current_bet, prev_raise, my_prev_bet, waits): # Decide whether to bet/raise or call (return int amount), or check/fold (return 0)
         print(str(self.name + ' in position ' + str(self.position)))
-        print('   Player cum. bets: ' + str(my_prev_bet))
-        print('              round: ' + str(round))
-        print('                pot: ' + str(pot))
-        print('        current_bet: ' + str(current_bet))
-        print('         prev_raise: ' + str(prev_raise))
+        p_info = '*** '
+        p_info += 'pl remaining chips: ' + str(self.chips) + ' --- '
+        p_info += 'pl cumulative bets: ' + str(my_prev_bet)+ ' --- '
+        p_info += 'round: ' + str(round)+ ' --- '
+        p_info += 'pot: ' + str(pot)+ ' --- '
+        p_info += 'current_bet: ' + str(current_bet)+ ' --- '
+        p_info += 'prev_raise: ' + str(prev_raise)+ ' ***'
+        print(p_info)
 
         amount = 0
+        ceiling = 0
+        target = 0
         action = ''
+        max_bet = self.chips
+
         if self.active == False:
             print('(PL) Inactive player. No action taken by ' + str(self.name))
         else: 
             if round == 0: # Pre-Flop
-                print('Checking starting hand strength for... ' + str(self.hand))
+                p = 'Checking starting hand strength for... ' + str(self.hand)
                 val = start_hand_value(self.hand)
-                print('Hand value: ' + str(val))
-                if my_prev_bet == current_bet:
+                p += ' ... Hand value: ' + str(val)
+                print(p)
+                # print('There are still ' + str(waits) + ' players left to take first action')
+                if my_prev_bet == current_bet and (my_prev_bet !=0 or waits == 0):
                     print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
                     action = 'end'
-                    amount = 0
-                elif val >=10:
-                    if current_bet == 0:
-                        action = 'bet'
-                        amount = bb
-                    if current_bet >= bb and current_bet <= 4*bb:
-                        action = 'bet'
-                        amount = current_bet + 2*prev_raise - my_prev_bet
-                    elif current_bet >= 4*bb:
-                        action = 'call'
-                        amount = current_bet - my_prev_bet
-                elif val >=2:
-                    if current_bet == 0:
-                        action = 'bet'
-                        amount = bb
-                    if current_bet >= bb and current_bet <= 3*bb:
-                        action = 'bet'
-                        amount = current_bet + prev_raise - my_prev_bet
-                    elif current_bet >= 3*bb:
-                        action = 'call'
-                        amount = current_bet - my_prev_bet
+                    amount = my_prev_bet
                 else:
-                    action = 'fold'
-                    amount = 0
-                    self.active = False
+                    if val >=10:
+                        ceiling = 10*bb
+                        target = 5*bb
+                    elif val >=2:
+                        ceiling = 5*bb
+                        target = 2*bb
+                    else:
+                        ceiling = 0
+                        target = 0
+                    if current_bet > ceiling:
+                        action = 'fold'
+                        amount = my_prev_bet
+                        self.active = False
+                    elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) >= (target + bb): 
+                        action = 'call'
+                        amount = current_bet
+                    elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) <= ceiling: 
+                        action = 'bet'
+                        if (current_bet + prev_raise) < target:
+                            amount = target
+                        else:
+                            amount = current_bet + prev_raise
+                    elif current_bet <= ceiling:
+                        action = 'call'
+                        amount = current_bet
             elif round == 1: # Flop
-                if my_prev_bet == current_bet:
+                # print('There are still ' + str(waits) + ' players left to take first action')
+                if my_prev_bet == current_bet and (my_prev_bet !=0 or waits == 0):
                     print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
                     action = 'end'
-                    amount = 0
-                elif True: # Very good
-                    if current_bet == 0:
-                        action = 'bet'
-                        amount = bb
-                    if current_bet >= bb and current_bet <= 4*bb:
-                        action = 'bet'
-                        amount = current_bet + 2*prev_raise - my_prev_bet
-                    elif current_bet >= 4*bb:
-                        action = 'call'
-                        amount = current_bet - my_prev_bet
-                elif True: # Baseline (keep low for testing)
-                    if current_bet == 0:
-                        action = 'bet'
-                        amount = bb
-                    if current_bet >= bb and current_bet <= 3*bb:
-                        action = 'bet'
-                        amount = current_bet + prev_raise - my_prev_bet
-                    elif current_bet >= 3*bb:
-                        action = 'call'
-                        amount = current_bet - my_prev_bet
+                    amount = my_prev_bet
                 else:
-                    action = 'fold'
-                    amount = 0
-                    self.active = False
+                    # Determine hand strength and potential to hit/improve
+                    print('Checking Flop hand strength... ')
+                    p = 'Current hand: ' + str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand))
+                    outs = self.count_outs(board, round)
+                    p += ' --- outs for player ' + str(self.name) + ': ' + str(outs)
+                    print(p)
+                    if self.best_hand[0] > 4:
+                        ceiling = max_bet
+                        target = 20*bb
+                    elif self.best_hand[0] > 0 or outs[0] >=3:
+                        ceiling = 20*bb
+                        target = 5*bb
+                    else:
+                        ceiling = 0
+                        target = 0
+                    if current_bet > ceiling:
+                        action = 'fold'
+                        amount = my_prev_bet
+                        self.active = False
+                    elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) >= (target + bb): 
+                        action = 'call'
+                        amount = current_bet
+                    elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) <= ceiling: 
+                        action = 'bet'
+                        if (current_bet + prev_raise) < target:
+                            amount = target
+                        else:
+                            amount = current_bet + prev_raise
+                    elif current_bet <= ceiling:
+                        action = 'call'
+                        amount = current_bet
             elif round == 2: # Turn
-                print('*** Doing something at Turn ***')
-                if my_prev_bet == current_bet:
+                # print('There are still ' + str(waits) + ' players left to take first action')
+                if my_prev_bet == current_bet and (my_prev_bet !=0 or waits == 0):
                     print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
                     action = 'end'
-                    amount = 0
-                elif True: # Very good
-                    if current_bet == 0:
-                        action = 'bet'
-                        amount = bb
-                    if current_bet >= bb and current_bet <= 4*bb:
-                        action = 'bet'
-                        amount = current_bet + 2*prev_raise - my_prev_bet
-                    elif current_bet >= 4*bb:
-                        action = 'call'
-                        amount = current_bet - my_prev_bet
-                elif True: # Baseline (keep low for testing)
-                    if current_bet == 0:
-                        action = 'bet'
-                        amount = bb
-                    if current_bet >= bb and current_bet <= 3*bb:
-                        action = 'bet'
-                        amount = current_bet + prev_raise - my_prev_bet
-                    elif current_bet >= 3*bb:
-                        action = 'call'
-                        amount = current_bet - my_prev_bet
+                    amount = my_prev_bet
                 else:
-                    action = 'fold'
-                    amount = 0
-                    self.active = False
-                
+                    # Determine hand strength and potential to hit/improve
+                    print('Checking Turn hand strength... ')
+                    p = 'Current hand: ' + str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand))
+                    outs = self.count_outs(board, round)
+                    p += ' --- outs for player ' + str(self.name) + ': ' + str(outs)
+                    print(p)
+                    if self.best_hand[0] > 4:
+                        ceiling = max_bet
+                        target = 20*bb
+                    elif self.best_hand[0] > 0 or outs[0] >=3:
+                        ceiling = 20*bb
+                        target = 5*bb
+                    else:
+                        ceiling = 0
+                        target = 0
+                    if current_bet > ceiling:
+                        action = 'fold'
+                        amount = my_prev_bet
+                        self.active = False
+                    elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) >= (target + bb): 
+                        action = 'call'
+                        amount = current_bet
+                    elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) <= ceiling: 
+                        action = 'bet'
+                        if (current_bet + prev_raise) < target:
+                            amount = target
+                        else:
+                            amount = current_bet + prev_raise
+                    elif current_bet <= ceiling:
+                        action = 'call'
+                        amount = current_bet
             elif round == 3: # River
-                print('*** Doing something at River ***')
-                if my_prev_bet == current_bet:
+                # print('There are still ' + str(waits) + ' players left to take first action')
+                if my_prev_bet == current_bet and (my_prev_bet !=0 or waits == 0):
                     print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
                     action = 'end'
-                    amount = 0
-                elif True: # Very good
-                    if current_bet == 0:
-                        action = 'bet'
-                        amount = bb
-                    if current_bet >= bb and current_bet <= 4*bb:
-                        action = 'bet'
-                        amount = current_bet + 2*prev_raise - my_prev_bet
-                    elif current_bet >= 4*bb:
-                        action = 'call'
-                        amount = current_bet - my_prev_bet
-                elif True: # Baseline (keep low for testing)
-                    if current_bet == 0:
-                        action = 'bet'
-                        amount = bb
-                    if current_bet >= bb and current_bet <= 3*bb:
-                        action = 'bet'
-                        amount = current_bet + prev_raise - my_prev_bet
-                    elif current_bet >= 3*bb:
-                        action = 'call'
-                        amount = current_bet - my_prev_bet
+                    amount = my_prev_bet
                 else:
-                    action = 'fold'
-                    amount = 0
-                    self.active = False
-        self.chips -= amount    
-        return [action,amount+my_prev_bet]
+                    # Determine hand strength and potential to hit/improve
+                    print('Checking River hand strength... ')
+                    print('Final hand: ' + str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand)))
+                    if self.best_hand[0] > 5:
+                        ceiling = max_bet
+                        target = max_bet
+                    elif self.best_hand[0] > 4:
+                        ceiling = max_bet
+                        target = 20*bb
+                    elif self.best_hand[0] > 0:
+                        ceiling = 5*bb
+                        target = bb
+                    else:
+                        ceiling = 0
+                        target = 0
+                    if current_bet > ceiling:
+                        action = 'fold'
+                        amount = my_prev_bet
+                        self.active = False
+                    elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) >= (target + bb): 
+                        action = 'call'
+                        amount = current_bet
+                    elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) <= ceiling: 
+                        action = 'bet'
+                        if (current_bet + prev_raise) < target:
+                            amount = target
+                        else:
+                            amount = current_bet + prev_raise
+                    elif current_bet <= ceiling:
+                        action = 'call'
+                        amount = current_bet
+        # to ensure max bet isn't exceeded when target < chips left
+        if amount > max_bet:
+            amount = max_bet
+        self.chips -= (amount-my_prev_bet)
+        print('Ceiling: ' + str(ceiling) + '   Target: ' + str(target) + '   Chips left: ' + str(self.chips) + '   Amount: ' + str(amount) )        
+        return [action,amount]
 
     def set_active(self, a):
+        print('Setting ' + self.name + ' active to ' + str(a) )
         self.active = a
     def is_active(self):
         return self.active
@@ -843,18 +892,24 @@ class Game:
         info += ('Board: ' + str(self.board) + '\n')
         info += ('Pot: $' + str(self.pot))
         return info
-    def update_positions(self): # Shifts dealer button by updating pos for each player in players list
+    def update_positions(self): # Shifts dealer button by updating pos for each player in players list, resets active status for players with chips remaining, and sets round to 0
         for i in range(self.player_count):
             if self.players[i].get_position() == self.player_count - 1: # if at max pos
                 self.players[i].set_position(0)                         # set pos to 0 (dealer)
             else:    
                 pos = self.players[i].get_position() + 1
                 self.players[i].set_position(pos)
+            if self.players[i].get_chips() > 0:
+                print(str(self.players[i].get_name()) + ' has ' + str(self.players[i].get_chips()) + ' chips remaining')
+                self.players[i].set_active(True)
+        print('Setting round to 0 in game.update_positions')
+        self.round = 0
     def update_round(self): # increments round, or returns to zero for new deal
         if self.round == 3:
             self.round = 0
         else:
             self.round += 1
+        print('Setting round to ' + str(self.round) + ' in game.update_round')
         return self.round
 
     def get_chip_leaders(self): # Returns a list of players objects with the most chips
@@ -872,13 +927,16 @@ class Game:
             print('ERROR!  POT NOT TAKEN BEFORE NEXT DEAL')
             self.pot = 0
         if self.round == 0:   # Deal
-            # print('NEW DEAL')
+            print('NEW DEAL')
             # Reset for new hand
             self.board = []
             self.deck.shuffle()
             for i in range(self.player_count):
                 self.players[i].reset_hand()
-                self.players[i].set_active(True)
+                if self.players[i].get_chips() > 0: # This is also done by update_position
+                    self.players[i].set_active(True)
+                else:
+                    self.players[i].set_active(False)   
             # Find who sits (index of players[i]) to the left of dealer (position 1)
             seat = -1
             i = 0
@@ -911,15 +969,18 @@ class Game:
                     print('ERROR POSTING BLINDS.  ONLY ONE PLAYER.')
 
         elif self.round == 1:  # Flop
+            print('DEALING FLOP')
             self.deck.take_card()   # Burn a card
             for i in range(3):      # Add 3 cards to board
                 self.board.append(self.deck.take_card())
 
         elif self.round == 2:  # Turn
+            print('DEALING TURN')
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
 
         elif self.round == 3:  # River
+            print('DEALING RIVER')
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
 
@@ -935,12 +996,12 @@ class Game:
     def get_round(self): # returns int from 0 (Pre-Flop) to 3 (River) corresponding to betting round. Increment with update_round()
         return self.round
     def award_pot(self): # gives / splits pot to those in leaders[], matching names with players[].  Returns string with award info. Does not yet account for side pots!
-        chips = int(self.pot / len(self.get_leaders()))
-        if len(self.get_leaders()) > 1:
+        chips = int(self.pot / len(self.leaders))
+        if len(self.leaders) > 1:
             output = '$' + str(chips) + ' each to '
         else: 
             output = '$' + str(chips) + ' to '
-        i = (len(self.get_leaders()) - 1)
+        i = (len(self.leaders) - 1)
         while i >= 0:
             for j in range(self.player_count):
                 if self.leaders[i].get_name() == self.players[j].get_name():
@@ -954,8 +1015,12 @@ class Game:
     def find_leaders(self): # creates list hands[] of best 5 card hand (in eval code) for each player, sets best_hand for player object, finds best_hand overall, and creates list leaders[] of player objects who hold the best hand 
         self.leaders = []
         names = []
-        if len(self.board) < 3:
-            print('ERROR! NOT ENOUGH CARDS ON BOARD TO MAKE HANDS')
+        if self.count_active_players() == 1:
+            print('find_leaders sees only 1 player active')
+            for i in range(self.player_count):
+                if self.players[i].is_active() == True:
+                    self.leaders.append(self.players[i])
+                    names.append(self.players[i].get_name())
         else: 
             # Find the best 5 card hand from each player and store in hands[]
             # Player objects could do this part??
@@ -976,7 +1041,7 @@ class Game:
                 if self.best_hand == self.players[i].get_best_hand():
                     self.leaders.append(self.players[i])
                     names.append(self.players[i].get_name())
-            print('Leaders: ' + str(names))
+        print('Leaders: ' + str(names))
     def get_player_hands(self): # returns hands[] as created in find_leaders()
         if self.player_count != len(self.hands):
             self.find_leaders()
@@ -1005,7 +1070,7 @@ class Game:
         return c
     # Return continue dealing or award pot (+ winner and amount) 
     def players_act(self):
-    # initialize values
+        # initialize values
         end_name = 0
         player_bets = []  # track how many chips a player has committed per betting round
         player_turn_count = [] # track how many turns a player has taken.  Not sure if you need this??
@@ -1048,8 +1113,11 @@ class Game:
         for i in range(self.player_count):
             players_active.append(self.players[i].is_active())
             names.append(self.players[i].get_name())
-            player_actions.append('wait')
-    # #
+            if self.players[i].is_active():
+                player_actions.append('wait')
+            else:
+                player_actions.append('fold')
+        # #
         print('First to act at position ' + str(player_turn))
         w = 0
         while done == False:
@@ -1067,7 +1135,13 @@ class Game:
                     pl_prev_bet = player_bets[i]
                     action = []
                     if self.players[i].is_active():
-                        action = self.players[i].action(self.round, self.pot, self.bb, current_bet, prev_raise, pl_prev_bet)
+                        # count players still waiting to make turn
+                        # not sure if this works when players have folded.  Are they still waiting if folded?
+                        waits = 0
+                        for j in range(len(player_actions)):
+                            if player_actions[j] == 'wait':
+                                waits += 1
+                        action = self.players[i].action(self.round, self.board, self.pot, self.bb, current_bet, prev_raise, pl_prev_bet, waits)
                         print('Action: ' + str(action))
                         player_actions[i] = action[0]
                         player_bets[i] = action[1]
@@ -1092,7 +1166,7 @@ class Game:
                                 current_bet = action[1]
 
                     else:
-                        print(str(self.players[i].get_name) + ' is not active (GL)') 
+                        print(str(self.players[i].get_name()) + ' is not active (GL)') 
 
                     if player_turn == self.player_count - 1:
                         player_turn = 0 
@@ -1124,12 +1198,26 @@ class Game:
             return ['award',end_name,self.pot]
 
         return [0]
+    def is_game_over(self):
+        no_chips = 0
+        for i in range(self.player_count):
+            if self.players[i].get_chips() == 0:
+                no_chips += 1
+        if no_chips == self.player_count - 1:
+            return True
+        else:
+            return False
+
+
+
 
 game = Game(['CD', 'IK', 'BM'])
 done = False
+last_game = False
+
 i = 0
 while not done:
-    print('\n****  Game ' + str(i) + ' ****')
+    print('\n***********************************  Game ' + str(i) + ' ***********************************')
 
     game.deal() # deal & blinds
     print(game.info())
@@ -1146,7 +1234,7 @@ while not done:
         print(game.info())
         print(game.hand_info())
         print('\nFlop Actions ========================')
-        # game.players_act()
+        results = game.players_act()
         print('=====================================')
         print('Flop results: ' + str(results))
         print('=====================================\n')
@@ -1155,10 +1243,10 @@ while not done:
         print('Game sees ' + str(game.count_active_players()) + ' active players remaining before Turn')
         if game.count_active_players() > 1:
             game.deal() # turn
-            # print(game.info())
-            # print(game.hand_info())
+            print(game.info())
+            print(game.hand_info())
             print('\nTurn Actions ========================')
-            # game.players_act()
+            results = game.players_act()
             print('=====================================')
             print('Turn results: ' + str(results))
             print('=====================================\n')
@@ -1167,10 +1255,10 @@ while not done:
             print('Game sees ' + str(game.count_active_players()) + ' active players remaining before Turn')
             if game.count_active_players() > 1:
                 game.deal() # river
-                # print(game.info())
-                # print(game.hand_info())
+                print(game.info())
+                print(game.hand_info())
                 print('\nRiver Actions =======================')
-                # game.players_act()
+                results = game.players_act()
                 print('=====================================')
                 print('River results: ' + str(results))
                 print('=====================================\n')
@@ -1181,12 +1269,23 @@ while not done:
     if game.count_active_players() > 1:
         print('SHOWDOWN!')
     game.find_leaders()
+    print('... Awarding pot ...')
     print(game.award_pot())
+
     game.update_positions()
+    if (game.is_game_over()):
+        print('\n--- Only one player remaining.  Game over after ' + str(i) + ' hands ---')
+        print(game.info())
+        done = True
 
     i += 1
-    if i > 0:
+
+    ### for testing
+    if i > 10000:
+        print('\n--- loop killed by max i = ' + str(i) + ' ---')
+        print(game.info())
         done = True
+
     
 
 # # Core loop to date 27/7
