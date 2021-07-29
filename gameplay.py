@@ -16,7 +16,7 @@ def start_game(names):
         print('=====================================\n')
         g.update_round()
 
-        print('Game sees ' + str(g.count_active_players()) + ' active players remaining before Flop')
+        print(str(g.count_active_players()) + ' active players remaining before Flop')
         if g.count_active_players() > 1:
             g.deal() # flop
             print(g.info())
@@ -28,7 +28,7 @@ def start_game(names):
             print('=====================================\n')
             g.update_round()
             
-            print('Game sees ' + str(g.count_active_players()) + ' active players remaining before Turn')
+            print(str(g.count_active_players()) + ' active players remaining before Turn')
             if g.count_active_players() > 1:
                 g.deal() # turn
                 print(g.info())
@@ -40,7 +40,7 @@ def start_game(names):
                 print('=====================================\n')
                 g.update_round()
 
-                print('Game sees ' + str(g.count_active_players()) + ' active players remaining before Turn')
+                print(str(g.count_active_players()) + ' active players remaining before Turn')
                 if g.count_active_players() > 1:
                     g.deal() # river
                     print(g.info())
@@ -53,12 +53,13 @@ def start_game(names):
                     g.update_round()
 
         print('\n***** END OF HAND *****')
-        print('Game sees ' + str(g.count_active_players()) + ' active players at end')
+        print(g.info())
+        print(str(g.count_active_players()) + ' active players at end')
         if g.count_active_players() > 1:
             print('SHOWDOWN!')
         g.find_leaders()
-        print('... Awarding pot ...')
         print(g.award_pot())
+        g.chips_check()
 
         g.update_positions()
         if (g.is_game_over()):
@@ -69,7 +70,7 @@ def start_game(names):
         i += 1
 
         ### for testing
-        if i > 10:
+        if i > 10000:
             print('\n--- loop killed by max i = ' + str(i) + ' ---')
             print(g.info())
             done = True

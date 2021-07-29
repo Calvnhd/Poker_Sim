@@ -30,7 +30,6 @@ class Game:
     def get_players(self): # Returns a list of the player objects
         return self.players
     def info(self):  # Returns a string showing pot, players object info (name,chips,hand,pos), cards on board
-        # info = 'Pot: ' + str(self.pot) + '\n'
         info = ''
         for i in range(self.player_count):
             info += self.players[i].info()
@@ -48,7 +47,6 @@ class Game:
             if self.players[i].get_chips() > 0:
                 print(str(self.players[i].get_name()) + ' has ' + str(self.players[i].get_chips()) + ' chips remaining')
                 self.players[i].set_active(True)
-        # print('Setting round to 0 in game.update_positions')
         self.round = 0
     def update_round(self): # increments round, or returns to zero for new deal
         if self.round == 3:
@@ -57,7 +55,6 @@ class Game:
             self.round += 1
         # print('Setting round to ' + str(self.round) + ' in game.update_round')
         return self.round
-
     def get_chip_leaders(self): # Returns a list of players objects with the most chips
         self.chip_leaders = []
         max = 0
@@ -69,9 +66,10 @@ class Game:
                 self.chip_leaders.append(self.players[i].get_name())
         return self.chip_leaders
     def deal(self): # the core step in the Game. Loop through to deal cards to players and post blinds, flop, river, turn.  Tracks betting rounds and acts accordingly.
-        if self.pot != 0 and self.round == 0:
-            print('ERROR!  POT NOT TAKEN BEFORE NEXT DEAL')
-            self.pot = 0
+        # update to skip dealing to inactive players Pre-Flop?  This matters for realism only.
+        # if self.pot != 0 and self.round == 0:
+        #     print('ERROR!  POT NOT TAKEN BEFORE NEXT DEAL')
+        #     self.pot = 0
         if self.round == 0:   # Deal
             print('NEW DEAL')
             # Reset for new hand
@@ -113,26 +111,21 @@ class Game:
                         self.pot += self.players[i].bet(self.bb)
                 else:
                     print('ERROR POSTING BLINDS.  ONLY ONE PLAYER.')
-
         elif self.round == 1:  # Flop
-            # print('DEALING FLOP')
+            print('DEALING FLOP')
             self.deck.take_card()   # Burn a card
             for i in range(3):      # Add 3 cards to board
                 self.board.append(self.deck.take_card())
-
         elif self.round == 2:  # Turn
-            # print('DEALING TURN')
+            print('DEALING TURN')
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
-
         elif self.round == 3:  # River
-            # print('DEALING RIVER')
+            print('DEALING RIVER')
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
-
         else:
             print('\nDEALING ERROR.  Rounds not set')
-
     def get_deck(self): # returns list of cards remaining in deck
         return self.deck.get_deck()
     def get_removed(self): # returns list of cards removed from deck 
@@ -142,6 +135,7 @@ class Game:
     def get_round(self): # returns int from 0 (Pre-Flop) to 3 (River) corresponding to betting round. Increment with update_round()
         return self.round
     def award_pot(self): # gives / splits pot to those in leaders[], matching names with players[].  Returns string with award info. Does not yet account for side pots!
+        print('Calling award_pot')
         chips = int(self.pot / len(self.leaders))
         if len(self.leaders) > 1:
             output = '$' + str(chips) + ' each to '
@@ -155,10 +149,25 @@ class Game:
                     output += str(self.players[j].get_name())
                     output += ' '
             i -= 1
-        self.pot = 0
+        if self.pot % len(self.leaders) != 0:
+            self.pot = self.pot % len(self.leaders) # add leftover chips back into pot for next round
+        else:
+            self.pot = 0
         return output
-    # adapt this to exclude inactive players from leaders[]
+    def chips_check(self):
+        chips = self.pot
+        for i in range(self.player_count):
+            if self.players[i].get_chips() < 0:
+                print('ERROR! Player has negative chips')
+            else:
+                chips += self.players[i].get_chips()
+        if chips != self.total_chips:
+            print('ERROR! Incorrect number of total chips')
+            for i in range(self.player_count):
+                print(str(self.players[i].get_name()) + ': ' + str(self.players[i].get_chips()) + ' chips')
+            print('Pot: ' + str(self.pot))
     def find_leaders(self): # creates list hands[] of best 5 card hand (in eval code) for each player, sets best_hand for player object, finds best_hand overall, and creates list leaders[] of player objects who hold the best hand 
+        print('Calling find_leaders')
         self.leaders = []
         names = []
         if self.count_active_players() == 1:
@@ -170,7 +179,6 @@ class Game:
         else: 
             # Find the best 5 card hand from each player and store in hands[]
             # Player objects could do this part??
-            print('Looking for the best hand from each player...')
             self.hands = []
             for i in range(self.player_count):
                 if self.players[i].is_active():  # exclude inactive players
@@ -197,11 +205,10 @@ class Game:
             print('Calling find_leaders from get_leaders')
             self.find_leaders()
         return self.leaders
-    def hand_info(self):
+    def hand_info(self): # returns string of best hand made by each player
         output = ''
-        if len(self.board) >= 3:
-            if self.player_count != len(self.hands):
-                self.find_leaders()
+        if self.round != 0:
+            self.find_leaders()
             for i in range(self.player_count):
                 output += (str(self.players[i].get_name()) + ': ' + cards.interpret_eval(self.players[i].get_best_hand()) + '\n')
             output += ('Best hand: ' + str(cards.interpret_eval(self.best_hand))) 
@@ -214,15 +221,14 @@ class Game:
             if self.players[i].is_active() == True:
                 c += 1
         return c
-    # Return continue dealing or award pot (+ winner and amount) 
-    def players_act(self):
+    def players_act(self):  # Instructs players to act in turn.  Return [0]: continue dealing or award pot, winner and amount ['award','name',int]
         # initialize values
         end_name = 0
         player_bets = []  # track how many chips a player has committed per betting round
-        player_turn_count = [] # track how many turns a player has taken.  Not sure if you need this??
+        # player_turn_count = [] # track how many turns a player has taken.  Not sure if you need this??
         for i in range(self.player_count):
             player_bets.append(0)
-            player_turn_count.append(0)
+            # player_turn_count.append(0)
         if self.round == 0: # post blinds and UTG start position 
             current_bet = self.bb
             prev_raise = self.bb
@@ -233,7 +239,7 @@ class Game:
                 player_turn = 0
             elif self.player_count == 2:
                 player_turn = 1
-            # find sb and bb and add to player_bets[]
+            # find sb and bb and add to player_bets[].  Update to kill loop when sum of player_bets[] == sb + bb to avoid unneccessary loops
             for i in range(self.player_count):
                 if self.player_count > 2:
                     for j in range(self.player_count):
@@ -247,7 +253,6 @@ class Game:
                             player_bets[j] = self.sb
                         elif self.players[j].get_position() == 0:
                             player_bets[j] = self.bb
-                     
         else:
             current_bet = 0
             prev_raise = 0
@@ -263,18 +268,10 @@ class Game:
                 player_actions.append('wait')
             else:
                 player_actions.append('fold')
-        # #
         print('First to act at position ' + str(player_turn))
         w = 0
-        while done == False:
-            # print('----------------------------------------------------------    Loop: ' + str(w))
-            # print('LOOP SUMMARY')
-            # print('  Names: ' + str(names))
-            # print(' Active: ' + str(players_active))
-            # print('Actions: ' + str(player_actions))
-            # print('   Bets: ' + str(player_bets))
-            # print(' ')
-        
+        # Loop through players, and act if it's their turn
+        while not done:
             # look through list of players. 
             for i in range(self.player_count):
                 if self.players[i].get_position() == player_turn: # is player's turn
@@ -288,12 +285,12 @@ class Game:
                             if player_actions[j] == 'wait':
                                 waits += 1
                         action = self.players[i].action(self.round, self.board, self.pot, self.bb, current_bet, prev_raise, pl_prev_bet, waits)
-                        print('Action: ' + str(action))
+                        print(' Action: ' + str(action))
                         player_actions[i] = action[0]
                         player_bets[i] = action[1]
-                        print(names)
-                        print(player_actions)
-                        print(player_bets)
+                        print('  Names: ' + str(names))
+                        print('Actions: ' + str(player_actions))
+                        print('   Bets: ' + str(player_bets))
                         if action[0] == 'fold':
                             players_active[i] = False
                         elif action[0] == 'end':
@@ -301,15 +298,13 @@ class Game:
                             end_name = self.players[i].get_name()
                             done = True
                             break
-
                         # update info for next player decision
                         if action[1] > 0: # bet or call
                             print('adding ' + str(action[1] - pl_prev_bet) + ' to the pot')
                             self.pot += (action[1] - pl_prev_bet) # add bet/call to pot
                             if action[1] > current_bet: # find raise
-                                prev_raise = abs(action[1] - current_bet)
+                                prev_raise = action[1] - current_bet
                                 current_bet = action[1]
-
                     else:
                         print(str(self.players[i].get_name()) + ' is not active (GL)') 
 
@@ -318,14 +313,11 @@ class Game:
                     else: 
                         player_turn += 1
                     print('Next player to act is at position ' + str(player_turn) + '\n')
-           
+            w += 1
             # for testing / safety
-            if w > 10: 
+            if w > 100: 
                 print('While loop killed by w > condition')
                 done = True
-            # For testing
-            w += 1
-        
         # check for folds
         folds = 0
         for i in range(len(player_actions)):
@@ -343,7 +335,7 @@ class Game:
             return ['award',end_name,self.pot]
 
         return [0]
-    def is_game_over(self):
+    def is_game_over(self): # Checks if more than one player has chips remaining
         no_chips = 0
         for i in range(self.player_count):
             if self.players[i].get_chips() == 0:

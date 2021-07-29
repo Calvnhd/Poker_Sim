@@ -60,7 +60,11 @@ class Player:
         ceiling = 0
         target = 0
         action = ''
-        max_bet = self.chips
+        max_bet = self.chips + my_prev_bet
+        chips_left = self.chips
+        print('max_bet set to: ' + str(max_bet))
+        print('chips_left set to: ' + str(chips_left))
+
 
         if self.active == False:
             print('(PL) Inactive player. No action taken by ' + str(self.name))
@@ -86,9 +90,14 @@ class Player:
                     else:
                         ceiling = 0
                         target = 0
+                    if ceiling > chips_left:
+                        ceiling = chips_left
+                    if target > chips_left:
+                        target = chips_left
                     if current_bet > ceiling:
                         action = 'fold'
                         amount = my_prev_bet
+                        self.best_hand = [0,0,0]
                         self.active = False
                     elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) >= (target + bb): 
                         action = 'call'
@@ -124,10 +133,15 @@ class Player:
                     else:
                         ceiling = 0
                         target = 0
+                    if ceiling > chips_left:
+                        ceiling = chips_left
+                    if target > chips_left:
+                        target = chips_left    
                     if current_bet > ceiling:
                         action = 'fold'
                         amount = my_prev_bet
                         self.active = False
+                        self.best_hand = [0,0,0]
                     elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) >= (target + bb): 
                         action = 'call'
                         amount = current_bet
@@ -151,7 +165,7 @@ class Player:
                     # print('Checking Turn hand strength... ')
                     p = 'Current hand: ' + str(self.best_hand) + ' --- ' + str(cards.interpret_eval(self.best_hand))
                     outs = self.count_outs(board, round)
-                    p += ' --- outs for player ' + str(self.name) + ': ' + str(outs)
+                    p += ' --- [goal,outs] for player ' + str(self.name) + ': ' + str(outs)
                     print(p)
                     if self.best_hand[0] > 4:
                         ceiling = max_bet
@@ -162,10 +176,15 @@ class Player:
                     else:
                         ceiling = 0
                         target = 0
+                    if ceiling > chips_left:
+                        ceiling = chips_left
+                    if target > chips_left:
+                        target = chips_left
                     if current_bet > ceiling:
                         action = 'fold'
                         amount = my_prev_bet
                         self.active = False
+                        self.best_hand = [0,0,0]
                     elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) >= (target + bb): 
                         action = 'call'
                         amount = current_bet
@@ -179,14 +198,11 @@ class Player:
                         action = 'call'
                         amount = current_bet
             elif round == 3: # River
-                # print('There are still ' + str(waits) + ' players left to take first action')
                 if my_prev_bet == current_bet and (my_prev_bet !=0 or waits == 0):
-                    # print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
                     action = 'end'
                     amount = my_prev_bet
                 else:
                     # Determine hand strength and potential to hit/improve
-                    # print('Checking River hand strength... ')
                     print('Final hand: ' + str(self.best_hand) + ' --- ' + str(cards.interpret_eval(self.best_hand)))
                     if self.best_hand[0] > 5:
                         ceiling = max_bet
@@ -200,10 +216,15 @@ class Player:
                     else:
                         ceiling = 0
                         target = 0
+                    if ceiling > chips_left:
+                        ceiling = chips_left
+                    if target > chips_left:
+                        target = chips_left
                     if current_bet > ceiling:
                         action = 'fold'
                         amount = my_prev_bet
                         self.active = False
+                        self.best_hand = [0,0,0]
                     elif current_bet >= 0 and current_bet <= ceiling and (current_bet + prev_raise) >= (target + bb): 
                         action = 'call'
                         amount = current_bet
@@ -216,11 +237,12 @@ class Player:
                     elif current_bet <= ceiling:
                         action = 'call'
                         amount = current_bet
-        # to ensure max bet isn't exceeded when target < chips left
-        if amount > max_bet:
-            amount = max_bet
+        if amount < 0:
+            print('ERROR! Betting negative chips')
+        if (amount - my_prev_bet) < 0:
+            print('ERROR! adding imaginary chips?')
         self.chips -= (amount-my_prev_bet)
-        print('Ceiling: ' + str(ceiling) + '   Target: ' + str(target) + '   Chips left: ' + str(self.chips) + '   Amount: ' + str(amount) )        
+        print('Ceiling: ' + str(ceiling) + '   Target: ' + str(target) + '   Amount (round cum.): ' + str(amount)+ '   Amount (this turn): ' + str(amount-my_prev_bet)  + '   Chips left: ' + str(self.chips))
         return [action,amount]
 
     def set_active(self, a):
