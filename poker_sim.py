@@ -609,15 +609,16 @@ class Player:
 
         if self.active == False:
             print('(PL) Inactive player. No action taken by ' + str(self.name))
+            return [0,0]
         else: 
             if round == 0: # Pre-Flop
-                p = 'Checking starting hand strength for... ' + str(self.hand)
+                p = 'Checking starting hand strength for ' + str(self.hand)
                 val = start_hand_value(self.hand)
                 p += ' ... Hand value: ' + str(val)
                 print(p)
                 # print('There are still ' + str(waits) + ' players left to take first action')
                 if my_prev_bet == current_bet and (my_prev_bet !=0 or waits == 0):
-                    print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
+                    # print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
                     action = 'end'
                     amount = my_prev_bet
                 else:
@@ -649,12 +650,12 @@ class Player:
             elif round == 1: # Flop
                 # print('There are still ' + str(waits) + ' players left to take first action')
                 if my_prev_bet == current_bet and (my_prev_bet !=0 or waits == 0):
-                    print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
+                    # print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
                     action = 'end'
                     amount = my_prev_bet
                 else:
                     # Determine hand strength and potential to hit/improve
-                    print('Checking Flop hand strength... ')
+                    # print('Checking Flop hand strength... ')
                     p = 'Current hand: ' + str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand))
                     outs = self.count_outs(board, round)
                     p += ' --- outs for player ' + str(self.name) + ': ' + str(outs)
@@ -687,12 +688,12 @@ class Player:
             elif round == 2: # Turn
                 # print('There are still ' + str(waits) + ' players left to take first action')
                 if my_prev_bet == current_bet and (my_prev_bet !=0 or waits == 0):
-                    print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
+                    # print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
                     action = 'end'
                     amount = my_prev_bet
                 else:
                     # Determine hand strength and potential to hit/improve
-                    print('Checking Turn hand strength... ')
+                    # print('Checking Turn hand strength... ')
                     p = 'Current hand: ' + str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand))
                     outs = self.count_outs(board, round)
                     p += ' --- outs for player ' + str(self.name) + ': ' + str(outs)
@@ -725,12 +726,12 @@ class Player:
             elif round == 3: # River
                 # print('There are still ' + str(waits) + ' players left to take first action')
                 if my_prev_bet == current_bet and (my_prev_bet !=0 or waits == 0):
-                    print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
+                    # print('EVERYONE HAS EITHER CALLED OR FOLDED TO THIS PLAYER')
                     action = 'end'
                     amount = my_prev_bet
                 else:
                     # Determine hand strength and potential to hit/improve
-                    print('Checking River hand strength... ')
+                    # print('Checking River hand strength... ')
                     print('Final hand: ' + str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand)))
                     if self.best_hand[0] > 5:
                         ceiling = max_bet
@@ -768,7 +769,7 @@ class Player:
         return [action,amount]
 
     def set_active(self, a):
-        print('Setting ' + self.name + ' active to ' + str(a) )
+        # print('Setting ' + self.name + ' active to ' + str(a) )
         self.active = a
     def is_active(self):
         return self.active
@@ -805,6 +806,7 @@ class Player:
                     outs = 9
                     goal = 5
             
+            # Goal reference: 0 - High Card, 1 - Pair, 2 - Two Pair, 3 - Trips, 4 - Straight, 5 - Flush, 6 - Full House, 7 - Quads, 8 - Straight Flush, 9 - Royal Flush 
             if goal == 0 and self.best_hand[0] < 7: 
                 if self.best_hand[0] == 0: # High card
                     outs = 6 # (Pair)
@@ -834,24 +836,6 @@ class Player:
         elif round == 3: # River
             print('All cards dealt. This is as good as it gets.')
             goal = self.best_hand[0]
-
-        # if goal == 1:
-        #     g = 'Pair'
-        # elif goal == 2:
-        #     g = 'Two Pair'
-        # elif goal == 3:
-        #     g = 'Trips'
-        # elif goal == 4:
-        #     g = 'Straight'
-        # elif goal == 5:
-        #     g = 'Flush'
-        # elif goal == 6:
-        #     g = 'Full House'
-        # elif goal == 7:
-        #     g = 'Quads'
-        # elif goal == 8:
-        #     g = 'Straight Flush'
-        # print('Can improve to ' + g + ', outs found: ' + str(outs))
 
         return [goal, outs]
 
@@ -902,14 +886,14 @@ class Game:
             if self.players[i].get_chips() > 0:
                 print(str(self.players[i].get_name()) + ' has ' + str(self.players[i].get_chips()) + ' chips remaining')
                 self.players[i].set_active(True)
-        print('Setting round to 0 in game.update_positions')
+        # print('Setting round to 0 in game.update_positions')
         self.round = 0
     def update_round(self): # increments round, or returns to zero for new deal
         if self.round == 3:
             self.round = 0
         else:
             self.round += 1
-        print('Setting round to ' + str(self.round) + ' in game.update_round')
+        # print('Setting round to ' + str(self.round) + ' in game.update_round')
         return self.round
 
     def get_chip_leaders(self): # Returns a list of players objects with the most chips
@@ -969,18 +953,18 @@ class Game:
                     print('ERROR POSTING BLINDS.  ONLY ONE PLAYER.')
 
         elif self.round == 1:  # Flop
-            print('DEALING FLOP')
+            # print('DEALING FLOP')
             self.deck.take_card()   # Burn a card
             for i in range(3):      # Add 3 cards to board
                 self.board.append(self.deck.take_card())
 
         elif self.round == 2:  # Turn
-            print('DEALING TURN')
+            # print('DEALING TURN')
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
 
         elif self.round == 3:  # River
-            print('DEALING RIVER')
+            # print('DEALING RIVER')
             self.deck.take_card()                       # Burn a card
             self.board.append(self.deck.take_card())    # Add one card to board
 
@@ -1121,13 +1105,13 @@ class Game:
         print('First to act at position ' + str(player_turn))
         w = 0
         while done == False:
-            print('----------------------------------------------------------    Loop: ' + str(w))
-            print('LOOP SUMMARY')
-            print('  Names: ' + str(names))
-            print(' Active: ' + str(players_active))
-            print('Actions: ' + str(player_actions))
-            print('   Bets: ' + str(player_bets))
-            print(' ')
+            # print('----------------------------------------------------------    Loop: ' + str(w))
+            # print('LOOP SUMMARY')
+            # print('  Names: ' + str(names))
+            # print(' Active: ' + str(players_active))
+            # print('Actions: ' + str(player_actions))
+            # print('   Bets: ' + str(player_bets))
+            # print(' ')
         
             # look through list of players. 
             for i in range(self.player_count):
@@ -1151,7 +1135,7 @@ class Game:
                         if action[0] == 'fold':
                             players_active[i] = False
                         elif action[0] == 'end':
-                            print('End action detected in Game loop at player ' + str(self.players[i].get_name()))
+                            # print('End action detected in Game loop at player ' + str(self.players[i].get_name()))
                             end_name = self.players[i].get_name()
                             done = True
                             break
@@ -1281,27 +1265,9 @@ while not done:
     i += 1
 
     ### for testing
-    if i > 10000:
+    if i > 100000:
         print('\n--- loop killed by max i = ' + str(i) + ' ---')
         print(game.info())
         done = True
 
     
-
-# # Core loop to date 27/7
-# game = Game(['CD', 'IK', 'BM'])
-# for i in range(1):
-#     print('\n====  Game ' + str(i) + ' ====')
-#     game.deal() # deal & blinds
-#     game.update_round()
-#     game.deal() # flop
-#     game.update_round()
-#     game.deal() # turn
-#     game.update_round()
-#     game.deal() # river
-#     game.update_round()
-#     game.find_leaders()
-#     print(game.info())
-#     print(game.hand_info())
-#     print(game.award_pot())
-#     game.update_positions()
