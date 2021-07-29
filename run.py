@@ -1,10 +1,9 @@
-from game import *
+import gameplay
 
-
-# Run entire project with python run.py
+# Run project with python run.py
 
 def run():
-    test(1,2)
+    gameplay.start_game(['CD','IK','BM'])
 
 if __name__ == '__main__':
     run()
