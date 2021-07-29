@@ -281,9 +281,14 @@ class Game:
                         # count players still waiting to make turn
                         # not sure if this works when players have folded.  Are they still waiting if folded?
                         waits = 0
+                        folds = 0
                         for j in range(len(player_actions)):
                             if player_actions[j] == 'wait':
                                 waits += 1
+                            elif player_actions[j] == 'fold':
+                                folds += 1
+                        if folds == self.player_count:
+                            break
                         action = self.players[i].action(self.round, self.board, self.pot, self.bb, current_bet, prev_raise, pl_prev_bet, waits)
                         print(' Action: ' + str(action))
                         player_actions[i] = action[0]
@@ -314,8 +319,8 @@ class Game:
                         player_turn += 1
                     print('Next player to act is at position ' + str(player_turn) + '\n')
             w += 1
-            # for testing / safety
-            if w > 100: 
+            # for safety.  This gets triggered when a player gets knocked out.  Needs fixing!
+            if w > 10: 
                 print('While loop killed by w > condition')
                 done = True
         # check for folds
@@ -338,7 +343,7 @@ class Game:
     def is_game_over(self): # Checks if more than one player has chips remaining
         no_chips = 0
         for i in range(self.player_count):
-            if self.players[i].get_chips() == 0:
+            if self.players[i].get_chips() < self.bb:
                 no_chips += 1
         if no_chips == self.player_count - 1:
             return True

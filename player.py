@@ -65,6 +65,7 @@ class Player:
         print('max_bet set to: ' + str(max_bet))
         print('chips_left set to: ' + str(chips_left))
 
+        # ADD A LOOP TO CHECK ACTIVE PLAYERS?  PROBABLY IN GAME LOOP RIGHT BEFORE THIS IS CALLED...
 
         if self.active == False:
             print('(PL) Inactive player. No action taken by ' + str(self.name))
@@ -246,15 +247,12 @@ class Player:
         return [action,amount]
 
     def set_active(self, a):
-        # print('Setting ' + self.name + ' active to ' + str(a) )
         self.active = a
     def is_active(self):
         return self.active
     def find_best_hand(self, board):
         self.best_hand = cards.make_hands(self.hand, board)
-    # returns list [goal,outs]
-    # goal: best case hand improvement, outs: number of cards (chances) to hit goal
-    def count_outs(self, board, round):
+    def count_outs(self, board, round): # returns list [goal,outs], goal: best case hand improvement, outs: number of cards (chances) to hit goal
         self.find_best_hand(board)
         # print(str(self.best_hand) + ' --- ' + str(interpret_eval(self.best_hand)))
         outs = 0 
