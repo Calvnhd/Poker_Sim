@@ -24,6 +24,3 @@
 * Visualise sorting algorithms
 * Game based on influencing player emotions
 * Machine Learning model for best decisions to refine player archetypes
-* `cmake ..`
-* `cmake --build .`
-* `.\Debug\Modio_test_app`
